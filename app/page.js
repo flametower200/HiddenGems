@@ -1,8 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabaseClient';
-import { registraUtente, accedi, esci } from '../lib/registration';
+import Link from 'next/link';
+import { supabase } from '../lib/supabase';
+import { registraUtente, accedi } from '../lib/registration';
+import { caricaListaProfili } from '../lib/profileHelpers';
+import AppHeader from '../components/AppHeader';
 
 const RUOLI = ['Portiere', 'Difensore', 'Centrocampista', 'Attaccante'];
 const PIEDI = [
@@ -58,14 +61,31 @@ export default function Home() {
   }, [session, filtroRuolo]);
 
   const caricaProfili = async () => {
-    let query = supabase.from('profiles').select('*');
-    if (filtroRuolo !== 'tutti') query = query.eq('tipo_account', filtroRuolo);
-    const { data, error } = await query;
-    if (error) {
+    try {
+      const data = await caricaListaProfili(filtroRuolo);
+      setProfili(data);
+    } catch (error) {
       console.error('Errore caricamento profili:', error.message);
-      return;
     }
-    setProfili(data || []);
+  };
+
+  // Riga informativa in più sotto il badge di ruolo, diversa per ogni tipo account.
+  const infoAggiuntiva = (p) => {
+    const d = p.dettaglio;
+    if (!d) return null;
+    if (p.tipo_account === 'giocatore') {
+      return [d.ruolo_principale, d.piede, d.nazione].filter(Boolean).join(' · ');
+    }
+    if (p.tipo_account === 'allenatore') {
+      return [d.patentino, d.nazione].filter(Boolean).join(' · ');
+    }
+    if (p.tipo_account === 'scout') {
+      return d.societa_attuale || null;
+    }
+    if (p.tipo_account === 'societa') {
+      return [d.categoria, d.annata_squadra].filter(Boolean).join(' · ');
+    }
+    return null;
   };
 
   const handleRegister = async (e) => {
@@ -132,137 +152,127 @@ export default function Home() {
     setLoading(false);
   };
 
-  const handleLogout = async () => {
-    await esci();
-  };
-
-  if (loading) {
-    return <div style={{ padding: '40px', textAlign: 'center' }}>Caricamento in corso...</div>;
-  }
+  if (loading) return <div className="state-message">Caricamento in corso...</div>;
 
   if (!session) {
     return (
-      <main style={{ maxWidth: '500px', margin: '40px auto', padding: '20px', fontFamily: 'sans-serif' }}>
-        <h1 style={{ textAlign: 'center', color: '#1a365d' }}>HiddenGems ⚽</h1>
-        <p style={{ textAlign: 'center', color: '#666' }}>Piattaforma Scouting Calcistico</p>
+      <main className="page auth-shell">
+        <div className="auth-card">
+          <div className="auth-brand">
+            <h1>HiddenGems ⚽</h1>
+            <p>Il campo dove i talenti si fanno notare</p>
+          </div>
 
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-          <button onClick={() => setMode('login')} style={{ flex: 1, padding: '10px', backgroundColor: mode === 'login' ? '#2563eb' : '#e5e7eb', color: mode === 'login' ? '#fff' : '#000', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Accedi</button>
-          <button onClick={() => setMode('register')} style={{ flex: 1, padding: '10px', backgroundColor: mode === 'register' ? '#2563eb' : '#e5e7eb', color: mode === 'register' ? '#fff' : '#000', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Registrati</button>
+          <div className="auth-toggle">
+            <button className={mode === 'login' ? 'is-active' : ''} onClick={() => setMode('login')}>Accedi</button>
+            <button className={mode === 'register' ? 'is-active' : ''} onClick={() => setMode('register')}>Registrati</button>
+          </div>
+
+          <form onSubmit={mode === 'login' ? handleLogin : handleRegister} className="auth-form">
+            {mode === 'register' && (
+              <>
+                <div className="field">
+                  <label className="field__label">Tipo account</label>
+                  <select value={tipoAccount} onChange={(e) => setTipoAccount(e.target.value)}>
+                    <option value="giocatore">Giocatore</option>
+                    <option value="allenatore">Allenatore</option>
+                    <option value="scout">Scout</option>
+                    <option value="societa">Società</option>
+                  </select>
+                </div>
+
+                <input type="text" placeholder={tipoAccount === 'societa' ? 'Nome società' : 'Nome'} value={nome} onChange={(e) => setNome(e.target.value)} required />
+
+                {tipoAccount !== 'societa' && (
+                  <input type="text" placeholder="Cognome" value={cognome} onChange={(e) => setCognome(e.target.value)} required />
+                )}
+                {tipoAccount !== 'societa' && (
+                  <input type="text" placeholder="Genere" value={genere} onChange={(e) => setGenere(e.target.value)} />
+                )}
+                {tipoAccount !== 'societa' && (
+                  <div className="field">
+                    <label className="field__label">Data di nascita</label>
+                    <input type="date" value={dataNascita} onChange={(e) => setDataNascita(e.target.value)} required />
+                  </div>
+                )}
+                {tipoAccount !== 'societa' && (
+                  <>
+                    <input type="text" placeholder="Nazione" value={nazione} onChange={(e) => setNazione(e.target.value)} required />
+                    {nazione === 'Italia' && (
+                      <div className="field-row">
+                        <input type="text" placeholder="Regione" value={regione} onChange={(e) => setRegione(e.target.value)} />
+                        <input type="text" placeholder="Provincia" value={provincia} onChange={(e) => setProvincia(e.target.value)} />
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {tipoAccount === 'giocatore' && (
+                  <div className="subform">
+                    <h4>Dettagli giocatore</h4>
+                    <select value={ruoloPrincipale} onChange={(e) => setRuoloPrincipale(e.target.value)}>
+                      {RUOLI.map((r) => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                    <select value={piede} onChange={(e) => setPiede(e.target.value)}>
+                      {PIEDI.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+                    </select>
+                    <input type="number" placeholder="Altezza (cm)" value={altezza} onChange={(e) => setAltezza(e.target.value)} />
+                  </div>
+                )}
+
+                {tipoAccount === 'allenatore' && (
+                  <div className="subform">
+                    <h4>Dettagli allenatore</h4>
+                    <input type="text" placeholder="Patentino (es. UEFA B)" value={patentino} onChange={(e) => setPatentino(e.target.value)} required />
+                  </div>
+                )}
+
+                {tipoAccount === 'scout' && (
+                  <div className="subform">
+                    <h4>Dettagli scout</h4>
+                    <input type="text" placeholder="Società attuale (opzionale)" value={societaAttuale} onChange={(e) => setSocietaAttuale(e.target.value)} />
+                  </div>
+                )}
+
+                {tipoAccount === 'societa' && (
+                  <div className="subform">
+                    <h4>Dettagli società</h4>
+                    <select value={genereSquadra} onChange={(e) => setGenereSquadra(e.target.value)}>
+                      <option value="maschile">Maschile</option>
+                      <option value="femminile">Femminile</option>
+                    </select>
+                    <select value={annataSquadra} onChange={(e) => setAnnataSquadra(e.target.value)}>
+                      {ANNATE.map((a) => <option key={a} value={a}>{a}</option>)}
+                    </select>
+                    <input type="text" placeholder="Categoria (opzionale)" value={categoria} onChange={(e) => setCategoria(e.target.value)} />
+                    <input type="text" placeholder="Nazione (opzionale)" value={nazione} onChange={(e) => setNazione(e.target.value)} />
+                  </div>
+                )}
+              </>
+            )}
+
+            <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            {mode === 'register' && (
+              <input type="password" placeholder="Conferma password" value={confermaPassword} onChange={(e) => setConfermaPassword(e.target.value)} required />
+            )}
+
+            <button type="submit" className="btn btn--primary btn--block">
+              {mode === 'login' ? 'Entra' : 'Crea account'}
+            </button>
+          </form>
         </div>
-
-        <form onSubmit={mode === 'login' ? handleLogin : handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {mode === 'register' && (
-            <>
-              <label>
-                Tipo Account:
-                <select value={tipoAccount} onChange={(e) => setTipoAccount(e.target.value)} style={{ width: '100%', padding: '8px', marginTop: '4px' }}>
-                  <option value="giocatore">Giocatore</option>
-                  <option value="allenatore">Allenatore</option>
-                  <option value="scout">Scout</option>
-                  <option value="societa">Società</option>
-                </select>
-              </label>
-
-              <input type="text" placeholder={tipoAccount === 'societa' ? 'Nome società' : 'Nome'} value={nome} onChange={(e) => setNome(e.target.value)} required style={{ padding: '8px' }} />
-
-              {tipoAccount !== 'societa' && (
-                <input type="text" placeholder="Cognome" value={cognome} onChange={(e) => setCognome(e.target.value)} required style={{ padding: '8px' }} />
-              )}
-              {tipoAccount !== 'societa' && (
-                <input type="text" placeholder="Genere" value={genere} onChange={(e) => setGenere(e.target.value)} style={{ padding: '8px' }} />
-              )}
-              {tipoAccount !== 'societa' && (
-                <label>
-                  Data di nascita:
-                  <input type="date" value={dataNascita} onChange={(e) => setDataNascita(e.target.value)} required style={{ width: '100%', padding: '8px', marginTop: '4px' }} />
-                </label>
-              )}
-              {tipoAccount !== 'societa' && (
-                <>
-                  <input type="text" placeholder="Nazione" value={nazione} onChange={(e) => setNazione(e.target.value)} required style={{ padding: '8px' }} />
-                  {nazione === 'Italia' && (
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <input type="text" placeholder="Regione" value={regione} onChange={(e) => setRegione(e.target.value)} style={{ flex: 1, padding: '8px' }} />
-                      <input type="text" placeholder="Provincia" value={provincia} onChange={(e) => setProvincia(e.target.value)} style={{ flex: 1, padding: '8px' }} />
-                    </div>
-                  )}
-                </>
-              )}
-
-              {tipoAccount === 'giocatore' && (
-                <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '6px' }}>
-                  <h4>Dettagli Giocatore</h4>
-                  <select value={ruoloPrincipale} onChange={(e) => setRuoloPrincipale(e.target.value)} style={{ width: '100%', padding: '8px', marginBottom: '8px' }}>
-                    {RUOLI.map((r) => <option key={r} value={r}>{r}</option>)}
-                  </select>
-                  <select value={piede} onChange={(e) => setPiede(e.target.value)} style={{ width: '100%', padding: '8px', marginBottom: '8px' }}>
-                    {PIEDI.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
-                  </select>
-                  <input type="number" placeholder="Altezza (cm)" value={altezza} onChange={(e) => setAltezza(e.target.value)} style={{ width: '100%', padding: '8px' }} />
-                </div>
-              )}
-
-              {tipoAccount === 'allenatore' && (
-                <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '6px' }}>
-                  <h4>Dettagli Allenatore</h4>
-                  <input type="text" placeholder="Patentino (es. UEFA B)" value={patentino} onChange={(e) => setPatentino(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
-                </div>
-              )}
-
-              {tipoAccount === 'scout' && (
-                <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '6px' }}>
-                  <h4>Dettagli Scout</h4>
-                  <input type="text" placeholder="Società attuale (opzionale)" value={societaAttuale} onChange={(e) => setSocietaAttuale(e.target.value)} style={{ width: '100%', padding: '8px' }} />
-                </div>
-              )}
-
-              {tipoAccount === 'societa' && (
-                <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '6px' }}>
-                  <h4>Dettagli Società</h4>
-                  <select value={genereSquadra} onChange={(e) => setGenereSquadra(e.target.value)} style={{ width: '100%', padding: '8px', marginBottom: '8px' }}>
-                    <option value="maschile">Maschile</option>
-                    <option value="femminile">Femminile</option>
-                  </select>
-                  <select value={annataSquadra} onChange={(e) => setAnnataSquadra(e.target.value)} style={{ width: '100%', padding: '8px', marginBottom: '8px' }}>
-                    {ANNATE.map((a) => <option key={a} value={a}>{a}</option>)}
-                  </select>
-                  <input type="text" placeholder="Categoria (opzionale)" value={categoria} onChange={(e) => setCategoria(e.target.value)} style={{ width: '100%', padding: '8px', marginBottom: '8px' }} />
-                  <input type="text" placeholder="Nazione (opzionale)" value={nazione} onChange={(e) => setNazione(e.target.value)} style={{ width: '100%', padding: '8px' }} />
-                </div>
-              )}
-            </>
-          )}
-
-          <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ padding: '8px' }} />
-          <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ padding: '8px' }} />
-          {mode === 'register' && (
-            <input type="password" placeholder="Conferma password" value={confermaPassword} onChange={(e) => setConfermaPassword(e.target.value)} required style={{ padding: '8px' }} />
-          )}
-
-          <button type="submit" style={{ padding: '10px', backgroundColor: '#16a34a', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>
-            {mode === 'login' ? 'Entra' : 'Crea Account'}
-          </button>
-        </form>
       </main>
     );
   }
 
   return (
-    <main style={{ maxWidth: '800px', margin: '20px auto', padding: '20px', fontFamily: 'sans-serif' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #e5e7eb', paddingBottom: '15px' }}>
-        <div>
-          <h2>HiddenGems</h2>
-          <p style={{ margin: 0, color: '#666' }}>Connesso come: <strong>{session.user.email}</strong></p>
-        </div>
-        <button onClick={handleLogout} style={{ padding: '8px 16px', backgroundColor: '#dc2626', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>Logout</button>
-      </header>
-
-      <section style={{ marginTop: '30px' }}>
-        <h3>Bacheca Scouting</h3>
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ marginRight: '10px' }}>Filtra per Ruolo:</label>
-          <select value={filtroRuolo} onChange={(e) => setFiltroRuolo(e.target.value)} style={{ padding: '6px' }}>
+    <main className="page">
+      <AppHeader session={session} />
+      <div className="container container--wide">
+        <div className="section-title">
+          <h3>Bacheca scouting</h3>
+          <select value={filtroRuolo} onChange={(e) => setFiltroRuolo(e.target.value)}>
             <option value="tutti">Tutti i profili</option>
             <option value="giocatore">Giocatori</option>
             <option value="allenatore">Allenatori</option>
@@ -271,20 +281,27 @@ export default function Home() {
           </select>
         </div>
 
-        <div style={{ display: 'grid', gap: '15px' }}>
+        <div className="card-stack">
           {profili.length === 0 ? (
-            <p>Nessun profilo trovato per questa categoria.</p>
+            <p className="state-message">Nessun profilo trovato per questa categoria.</p>
           ) : (
             profili.map((p) => (
-              <div key={p.id} style={{ border: '1px solid #e2e8f0', padding: '15px', borderRadius: '8px', backgroundColor: '#f8fafc' }}>
-                <h4 style={{ margin: '0 0 5px 0' }}>{p.nome} {p.cognome}</h4>
-                <p style={{ margin: '0 0 5px 0', textTransform: 'capitalize', color: '#2563eb', fontWeight: 'bold' }}>{p.tipo_account}</p>
-                <small style={{ color: '#64748b' }}>Email: {p.email}</small>
-              </div>
+              <Link
+                key={p.id}
+                href={p.id === session.user.id ? '/profilo' : `/profilo/${p.id}`}
+                className={`card card--clickable card--role-${p.tipo_account}`}
+              >
+                <h4 style={{ marginBottom: 4 }}>{p.nome} {p.cognome}</h4>
+                <span className={`badge badge--${p.tipo_account}`}>{p.tipo_account}</span>
+                {infoAggiuntiva(p) && (
+                  <p style={{ marginTop: 8, marginBottom: 0, fontSize: '0.88rem' }}>{infoAggiuntiva(p)}</p>
+                )}
+                <p style={{ marginTop: 4, marginBottom: 0, color: 'var(--color-muted)', fontSize: '0.8rem' }}>{p.email}</p>
+              </Link>
             ))
           )}
         </div>
-      </section>
+      </div>
     </main>
   );
 }
