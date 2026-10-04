@@ -297,7 +297,6 @@ export default function Home() {
                 {infoAggiuntiva(p) && (
                   <p style={{ marginTop: 8, marginBottom: 0, fontSize: '0.88rem' }}>{infoAggiuntiva(p)}</p>
                 )}
-                <p style={{ marginTop: 4, marginBottom: 0, color: 'var(--color-muted)', fontSize: '0.8rem' }}>{p.email}</p>
               </Link>
             ))
           )}

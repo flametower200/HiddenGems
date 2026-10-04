@@ -74,7 +74,6 @@ export default function AppHeader({ session, theme = 'bacheca' }) {
       <div className="app-header__inner">
         <div className="app-header__identity">
           <p className="app-header__brand">HiddenGems</p>
-          <p className="app-header__email">Connesso come {session?.user?.email}</p>
         </div>
 
         <nav className="app-header__nav" aria-label="Navigazione principale">
