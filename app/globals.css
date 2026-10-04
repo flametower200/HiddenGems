@@ -86,14 +86,25 @@ a { color: var(--color-pitch-light); text-decoration: none; }
 .section-dragging .page {
   position: relative;
   z-index: 2;
-  transform: translateX(var(--section-drag-x, 0px));
+  transform: translate3d(var(--section-drag-x, 0px), 0, 0);
   transition: none;
   will-change: transform;
+}
+
+.section-committing .page,
+.section-committing .section-drag-preview {
+  transition: transform 150ms cubic-bezier(0.2, 0.75, 0.25, 1);
 }
 
 .section-drag-settling .page,
 .section-drag-settling .section-drag-preview {
   transition: transform 220ms cubic-bezier(0.2, 0.75, 0.25, 1);
+}
+
+.section-committing .page {
+  position: relative;
+  z-index: 2;
+  transform: translate3d(var(--section-drag-x, 0px), 0, 0);
 }
 
 .section-drag-preview {
@@ -118,6 +129,7 @@ a { color: var(--color-pitch-light); text-decoration: none; }
 .section-drag-preview.app-header--impostazioni { background: linear-gradient(135deg, #2c2f36 0%, #161a20 100%); }
 
 .section-dragging .section-drag-preview,
+.section-committing .section-drag-preview,
 .section-drag-settling .section-drag-preview {
   display: block;
 }
@@ -151,55 +163,21 @@ a { color: var(--color-pitch-light); text-decoration: none; }
 }
 
 .section-swipe--next .page {
-  animation: section-arrive-from-right 520ms cubic-bezier(0.22, 0.7, 0.2, 1) both;
+  animation: section-arrive-from-right 180ms cubic-bezier(0.22, 0.7, 0.2, 1) both;
 }
 
 .section-swipe--previous .page {
-  animation: section-arrive-from-left 520ms cubic-bezier(0.22, 0.7, 0.2, 1) both;
+  animation: section-arrive-from-left 180ms cubic-bezier(0.22, 0.7, 0.2, 1) both;
 }
 
 @keyframes section-arrive-from-right {
-  from { opacity: 0.85; transform: translateX(9vw); }
+  from { transform: translate3d(4vw, 0, 0); }
   to { opacity: 1; transform: translateX(0); }
 }
 
 @keyframes section-arrive-from-left {
-  from { opacity: 0.85; transform: translateX(-9vw); }
+  from { transform: translate3d(-4vw, 0, 0); }
   to { opacity: 1; transform: translateX(0); }
-}
-
-:root[data-section-direction="next"]::view-transition-old(root) {
-  animation: section-exit-to-left 560ms cubic-bezier(0.22, 0.7, 0.2, 1) both;
-}
-
-:root[data-section-direction="next"]::view-transition-new(root) {
-  animation: section-enter-from-right 560ms cubic-bezier(0.22, 0.7, 0.2, 1) both;
-}
-
-:root[data-section-direction="previous"]::view-transition-old(root) {
-  animation: section-exit-to-right 560ms cubic-bezier(0.22, 0.7, 0.2, 1) both;
-}
-
-:root[data-section-direction="previous"]::view-transition-new(root) {
-  animation: section-enter-from-left 560ms cubic-bezier(0.22, 0.7, 0.2, 1) both;
-}
-
-@keyframes section-exit-to-left {
-  to { transform: translateX(-100%); }
-}
-
-@keyframes section-enter-from-right {
-  from { transform: translateX(100%); }
-  to { transform: translateX(0); }
-}
-
-@keyframes section-exit-to-right {
-  to { transform: translateX(100%); }
-}
-
-@keyframes section-enter-from-left {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(0); }
 }
 
 .container {

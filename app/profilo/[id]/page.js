@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '../../../lib/supabase';
 import AppHeader from '../../../components/AppHeader';
@@ -20,6 +21,24 @@ export default function ProfiloPubblico() {
   const [stato, setStato] = useState({ seguito: false, preferito: false });
   const [inviandoRichiesta, setInviandoRichiesta] = useState(false);
 
+  const carica = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [{ profilo: p, dettaglio: d }, c, s] = await Promise.all([
+        caricaProfiloCompleto(id),
+        getContatoriProfilo(id),
+        controllaStato(id),
+      ]);
+      setProfilo(p);
+      setDettaglio(d);
+      setContatori(c);
+      setStato(s);
+    } catch (err) {
+      console.error('Errore caricamento profilo:', err.message);
+    }
+    setLoading(false);
+  }, [id]);
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -33,23 +52,7 @@ export default function ProfiloPubblico() {
         setLoading(false);
       }
     });
-  }, [id]);
-
-  const carica = async () => {
-    setLoading(true);
-    try {
-      const { profilo: p, dettaglio: d } = await caricaProfiloCompleto(id);
-      setProfilo(p);
-      setDettaglio(d);
-
-      const [c, s] = await Promise.all([getContatoriProfilo(id), controllaStato(id)]);
-      setContatori(c);
-      setStato(s);
-    } catch (err) {
-      console.error('Errore caricamento profilo:', err.message);
-    }
-    setLoading(false);
-  };
+  }, [carica, id, router]);
 
   const handleMessaggi = async () => {
     setInviandoRichiesta(true);
@@ -96,7 +99,7 @@ export default function ProfiloPubblico() {
       <AppHeader session={session} theme="profilo" />
       <div className="container">
         <div className="profile-head">
-          <img src={profilo.foto_url || 'https://placehold.co/80x80?text=%20'} alt="" className="avatar" />
+          <Image src={profilo.foto_url || 'https://placehold.co/80x80?text=%20'} alt="" width={80} height={80} unoptimized loading="eager" className="avatar" />
           <div>
             <h2 style={{ marginBottom: 2 }}>{profilo.nome} {profilo.cognome}</h2>
             <span className={`badge badge--${profilo.tipo_account}`}>{profilo.tipo_account}</span>

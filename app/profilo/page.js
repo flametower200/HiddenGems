@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { supabase } from '../../lib/supabase';
 import AppHeader from '../../components/AppHeader';
 import { getContatoriProfilo } from '../../lib/social';
-import { caricaProfiloCompleto } from '../../lib/profileHelpers';
+import { caricaProfiloCompleto, invalidaCacheProfili } from '../../lib/profileHelpers';
 
 const PIEDI = [
   { value: 'destro', label: 'Destro' },
@@ -39,18 +40,13 @@ export default function MioProfilo() {
   const [categoria, setCategoria] = useState('');
   const [linguePartlate, setLinguePartlate] = useState('');
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session) caricaProfilo(session.user.id);
-      else setLoading(false);
-    });
-  }, []);
-
-  const caricaProfilo = async (userId) => {
+  const caricaProfilo = useCallback(async (userId) => {
     setLoading(true);
     try {
-      const { profilo: p, dettaglio: d } = await caricaProfiloCompleto(userId);
+      const [{ profilo: p, dettaglio: d }, c] = await Promise.all([
+        caricaProfiloCompleto(userId),
+        getContatoriProfilo(userId),
+      ]);
       setProfilo(p);
       setDettaglio(d);
 
@@ -79,13 +75,20 @@ export default function MioProfilo() {
         setCategoria(d.categoria || '');
       }
 
-      const c = await getContatoriProfilo(userId);
       setContatori(c);
     } catch (err) {
       console.error('Errore caricamento profilo:', err.message);
     }
     setLoading(false);
-  };
+  }, []);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session) caricaProfilo(session.user.id);
+      else setLoading(false);
+    });
+  }, [caricaProfilo]);
 
   const handleCaricaFoto = async (e) => {
     const file = e.target.files?.[0];
@@ -157,6 +160,7 @@ export default function MioProfilo() {
       alert('Errore salvataggio: ' + (errProfilo?.message || errDettaglio?.message));
       return;
     }
+    invalidaCacheProfili();
     setModifica(false);
     caricaProfilo(user.id);
   };
@@ -170,7 +174,7 @@ export default function MioProfilo() {
       <AppHeader session={session} theme="profilo" />
       <div className="container">
         <div className="profile-head">
-          <img src={fotoUrl || 'https://placehold.co/80x80?text=%20'} alt="" className="avatar" />
+          <Image src={fotoUrl || 'https://placehold.co/80x80?text=%20'} alt="" width={80} height={80} unoptimized loading="eager" className="avatar" />
           <div>
             <h2 style={{ marginBottom: 2 }}>{profilo.nome} {profilo.cognome}</h2>
             <span className={`badge badge--${profilo.tipo_account}`}>{profilo.tipo_account}</span>
@@ -228,7 +232,7 @@ export default function MioProfilo() {
             <div className="field">
               <label className="field__label">Foto profilo</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <img src={fotoUrl || 'https://placehold.co/56x56?text=%20'} alt="" className="avatar" style={{ width: 56, height: 56 }} />
+                <Image src={fotoUrl || 'https://placehold.co/56x56?text=%20'} alt="" width={56} height={56} unoptimized className="avatar" style={{ width: 56, height: 56 }} />
                 <label className="btn btn--outline btn--sm" style={{ cursor: 'pointer' }}>
                   {caricandoFoto ? 'Caricamento...' : 'Scegli immagine'}
                   <input type="file" accept="image/*" onChange={handleCaricaFoto} disabled={caricandoFoto} style={{ display: 'none' }} />
