@@ -75,7 +75,7 @@ export default function Cerca() {
 
   return (
     <main className="page">
-      <AppHeader session={session} />
+      <AppHeader session={session} theme="cerca" />
       <div className="container container--wide">
         <h3>Cerca</h3>
 

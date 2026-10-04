@@ -51,7 +51,7 @@ export default function Impostazioni() {
 
   return (
     <main className="page">
-      <AppHeader session={session} />
+      <AppHeader session={session} theme="impostazioni" />
       <div className="container">
         <h3>Impostazioni account</h3>
 

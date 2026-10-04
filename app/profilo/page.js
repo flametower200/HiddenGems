@@ -167,7 +167,7 @@ export default function MioProfilo() {
 
   return (
     <main className="page">
-      <AppHeader session={session} />
+      <AppHeader session={session} theme="profilo" />
       <div className="container">
         <div className="profile-head">
           <img src={fotoUrl || 'https://placehold.co/80x80?text=%20'} alt="" className="avatar" />

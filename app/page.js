@@ -157,110 +157,188 @@ export default function Home() {
   if (!session) {
     return (
       <main className="page auth-shell">
-        <div className="auth-card">
-          <div className="auth-brand">
-            <h1>HiddenGems ⚽</h1>
-            <p>Il campo dove i talenti si fanno notare</p>
-          </div>
+        <div className="showcase-wrap">
+          <div className="phone-stack phone-stack--left">
+            <div className="phone-shell phone-shell--profile">
+              <div className="phone-topbar">
+                <span>5:26</span>
+                <span>📶</span>
+              </div>
 
-          <div className="auth-toggle">
-            <button className={mode === 'login' ? 'is-active' : ''} onClick={() => setMode('login')}>Accedi</button>
-            <button className={mode === 'register' ? 'is-active' : ''} onClick={() => setMode('register')}>Registrati</button>
-          </div>
+              <div className="profile-headline">
+                <span className="profile-handle">ted_ghraham321</span>
+                <span className="mini-icon">＋</span>
+                <span className="mini-icon">☰</span>
+              </div>
 
-          <form onSubmit={mode === 'login' ? handleLogin : handleRegister} className="auth-form">
-            {mode === 'register' && (
-              <>
-                <div className="field">
-                  <label className="field__label">Tipo account</label>
-                  <select value={tipoAccount} onChange={(e) => setTipoAccount(e.target.value)}>
-                    <option value="giocatore">Giocatore</option>
-                    <option value="allenatore">Allenatore</option>
-                    <option value="scout">Scout</option>
-                    <option value="societa">Società</option>
-                  </select>
+              <div className="profile-meta">
+                <div className="avatar avatar--large" />
+                <div className="stat-list">
+                  <div><strong>84</strong><span>posts</span></div>
+                  <div><strong>1,134</strong><span>followers</span></div>
+                  <div><strong>513</strong><span>following</span></div>
                 </div>
+              </div>
 
-                <input type="text" placeholder={tipoAccount === 'societa' ? 'Nome società' : 'Nome'} value={nome} onChange={(e) => setNome(e.target.value)} required />
+              <div className="profile-bio">
+                <p>Here for a good time</p>
+                <p className="profile-link">@ted_ghram321</p>
+              </div>
 
-                {tipoAccount !== 'societa' && (
-                  <input type="text" placeholder="Cognome" value={cognome} onChange={(e) => setCognome(e.target.value)} required />
-                )}
-                {tipoAccount !== 'societa' && (
-                  <input type="text" placeholder="Genere" value={genere} onChange={(e) => setGenere(e.target.value)} />
-                )}
-                {tipoAccount !== 'societa' && (
+              <div className="profile-actions">
+                <button type="button">Edit profile</button>
+                <button type="button">Share profile</button>
+                <button type="button">⋯</button>
+              </div>
+
+              <div className="photo-grid">
+                <div className="photo photo--sunset" />
+                <div className="photo photo--portrait" />
+                <div className="photo photo--field" />
+                <div className="photo photo--soccer" />
+                <div className="photo photo--grass" />
+                <div className="photo photo--goal" />
+              </div>
+            </div>
+          </div>
+
+          <div className="phone-stack phone-stack--right">
+            <div className="phone-shell phone-shell--feed">
+              <div className="phone-topbar">
+                <span>5:26</span>
+                <span>📶</span>
+              </div>
+
+              <div className="feed-header">
+                <span className="feed-logo">HiddenGems</span>
+                <span className="mini-icon">♡</span>
+              </div>
+
+              <div className="story-row">
+                <div className="story story--main" />
+                <div className="story story--two" />
+                <div className="story story--three" />
+                <div className="story story--four" />
+              </div>
+
+              <div className="feed-post">
+                <div className="feed-post__media" />
+                <div className="feed-post__meta">
+                  <span>♡ 1.2K</span>
+                  <span>💬 57</span>
+                  <span>↻ 24</span>
+                  <span>✉ 6</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="auth-card">
+            <div className="auth-brand">
+              <span className="brand-badge">HG</span>
+              <h1>HiddenGems</h1>
+              <p>Il campo dove i talenti si fanno notare</p>
+            </div>
+
+            <div className="auth-toggle">
+              <button type="button" className={mode === 'login' ? 'is-active' : ''} onClick={() => setMode('login')}>Accedi</button>
+              <button type="button" className={mode === 'register' ? 'is-active' : ''} onClick={() => setMode('register')}>Registrati</button>
+            </div>
+
+            <form onSubmit={mode === 'login' ? handleLogin : handleRegister} className="auth-form">
+              {mode === 'register' && (
+                <>
                   <div className="field">
-                    <label className="field__label">Data di nascita</label>
-                    <input type="date" value={dataNascita} onChange={(e) => setDataNascita(e.target.value)} required />
-                  </div>
-                )}
-                {tipoAccount !== 'societa' && (
-                  <>
-                    <input type="text" placeholder="Nazione" value={nazione} onChange={(e) => setNazione(e.target.value)} required />
-                    {nazione === 'Italia' && (
-                      <div className="field-row">
-                        <input type="text" placeholder="Regione" value={regione} onChange={(e) => setRegione(e.target.value)} />
-                        <input type="text" placeholder="Provincia" value={provincia} onChange={(e) => setProvincia(e.target.value)} />
-                      </div>
-                    )}
-                  </>
-                )}
-
-                {tipoAccount === 'giocatore' && (
-                  <div className="subform">
-                    <h4>Dettagli giocatore</h4>
-                    <select value={ruoloPrincipale} onChange={(e) => setRuoloPrincipale(e.target.value)}>
-                      {RUOLI.map((r) => <option key={r} value={r}>{r}</option>)}
+                    <label className="field__label">Tipo account</label>
+                    <select value={tipoAccount} onChange={(e) => setTipoAccount(e.target.value)}>
+                      <option value="giocatore">Giocatore</option>
+                      <option value="allenatore">Allenatore</option>
+                      <option value="scout">Scout</option>
+                      <option value="societa">Società</option>
                     </select>
-                    <select value={piede} onChange={(e) => setPiede(e.target.value)}>
-                      {PIEDI.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
-                    </select>
-                    <input type="number" placeholder="Altezza (cm)" value={altezza} onChange={(e) => setAltezza(e.target.value)} />
                   </div>
-                )}
 
-                {tipoAccount === 'allenatore' && (
-                  <div className="subform">
-                    <h4>Dettagli allenatore</h4>
-                    <input type="text" placeholder="Patentino (es. UEFA B)" value={patentino} onChange={(e) => setPatentino(e.target.value)} required />
-                  </div>
-                )}
+                  <input type="text" placeholder={tipoAccount === 'societa' ? 'Nome società' : 'Nome'} value={nome} onChange={(e) => setNome(e.target.value)} required />
 
-                {tipoAccount === 'scout' && (
-                  <div className="subform">
-                    <h4>Dettagli scout</h4>
-                    <input type="text" placeholder="Società attuale (opzionale)" value={societaAttuale} onChange={(e) => setSocietaAttuale(e.target.value)} />
-                  </div>
-                )}
+                  {tipoAccount !== 'societa' && (
+                    <input type="text" placeholder="Cognome" value={cognome} onChange={(e) => setCognome(e.target.value)} required />
+                  )}
+                  {tipoAccount !== 'societa' && (
+                    <input type="text" placeholder="Genere" value={genere} onChange={(e) => setGenere(e.target.value)} />
+                  )}
+                  {tipoAccount !== 'societa' && (
+                    <div className="field">
+                      <label className="field__label">Data di nascita</label>
+                      <input type="date" value={dataNascita} onChange={(e) => setDataNascita(e.target.value)} required />
+                    </div>
+                  )}
+                  {tipoAccount !== 'societa' && (
+                    <>
+                      <input type="text" placeholder="Nazione" value={nazione} onChange={(e) => setNazione(e.target.value)} required />
+                      {nazione === 'Italia' && (
+                        <div className="field-row">
+                          <input type="text" placeholder="Regione" value={regione} onChange={(e) => setRegione(e.target.value)} />
+                          <input type="text" placeholder="Provincia" value={provincia} onChange={(e) => setProvincia(e.target.value)} />
+                        </div>
+                      )}
+                    </>
+                  )}
 
-                {tipoAccount === 'societa' && (
-                  <div className="subform">
-                    <h4>Dettagli società</h4>
-                    <select value={genereSquadra} onChange={(e) => setGenereSquadra(e.target.value)}>
-                      <option value="maschile">Maschile</option>
-                      <option value="femminile">Femminile</option>
-                    </select>
-                    <select value={annataSquadra} onChange={(e) => setAnnataSquadra(e.target.value)}>
-                      {ANNATE.map((a) => <option key={a} value={a}>{a}</option>)}
-                    </select>
-                    <input type="text" placeholder="Categoria (opzionale)" value={categoria} onChange={(e) => setCategoria(e.target.value)} />
-                    <input type="text" placeholder="Nazione (opzionale)" value={nazione} onChange={(e) => setNazione(e.target.value)} />
-                  </div>
-                )}
-              </>
-            )}
+                  {tipoAccount === 'giocatore' && (
+                    <div className="subform">
+                      <h4>Dettagli giocatore</h4>
+                      <select value={ruoloPrincipale} onChange={(e) => setRuoloPrincipale(e.target.value)}>
+                        {RUOLI.map((r) => <option key={r} value={r}>{r}</option>)}
+                      </select>
+                      <select value={piede} onChange={(e) => setPiede(e.target.value)}>
+                        {PIEDI.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+                      </select>
+                      <input type="number" placeholder="Altezza (cm)" value={altezza} onChange={(e) => setAltezza(e.target.value)} />
+                    </div>
+                  )}
 
-            <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-            <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-            {mode === 'register' && (
-              <input type="password" placeholder="Conferma password" value={confermaPassword} onChange={(e) => setConfermaPassword(e.target.value)} required />
-            )}
+                  {tipoAccount === 'allenatore' && (
+                    <div className="subform">
+                      <h4>Dettagli allenatore</h4>
+                      <input type="text" placeholder="Patentino (es. UEFA B)" value={patentino} onChange={(e) => setPatentino(e.target.value)} required />
+                    </div>
+                  )}
 
-            <button type="submit" className="btn btn--primary btn--block">
-              {mode === 'login' ? 'Entra' : 'Crea account'}
-            </button>
-          </form>
+                  {tipoAccount === 'scout' && (
+                    <div className="subform">
+                      <h4>Dettagli scout</h4>
+                      <input type="text" placeholder="Società attuale (opzionale)" value={societaAttuale} onChange={(e) => setSocietaAttuale(e.target.value)} />
+                    </div>
+                  )}
+
+                  {tipoAccount === 'societa' && (
+                    <div className="subform">
+                      <h4>Dettagli società</h4>
+                      <select value={genereSquadra} onChange={(e) => setGenereSquadra(e.target.value)}>
+                        <option value="maschile">Maschile</option>
+                        <option value="femminile">Femminile</option>
+                      </select>
+                      <select value={annataSquadra} onChange={(e) => setAnnataSquadra(e.target.value)}>
+                        {ANNATE.map((a) => <option key={a} value={a}>{a}</option>)}
+                      </select>
+                      <input type="text" placeholder="Categoria (opzionale)" value={categoria} onChange={(e) => setCategoria(e.target.value)} />
+                      <input type="text" placeholder="Nazione (opzionale)" value={nazione} onChange={(e) => setNazione(e.target.value)} />
+                    </div>
+                  )}
+                </>
+              )}
+
+              <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              {mode === 'register' && (
+                <input type="password" placeholder="Conferma password" value={confermaPassword} onChange={(e) => setConfermaPassword(e.target.value)} required />
+              )}
+
+              <button type="submit" className="btn btn--primary btn--block">
+                {mode === 'login' ? 'Accedi' : 'Crea account'}
+              </button>
+            </form>
+          </div>
         </div>
       </main>
     );
@@ -268,7 +346,7 @@ export default function Home() {
 
   return (
     <main className="page">
-      <AppHeader session={session} />
+      <AppHeader session={session} theme="bacheca" />
       <div className="container container--wide">
         <div className="section-title">
           <h3>Bacheca scouting</h3>

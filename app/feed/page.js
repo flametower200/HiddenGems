@@ -137,7 +137,7 @@ export default function Feed() {
 
   return (
     <main className="page">
-      <AppHeader session={session} />
+      <AppHeader session={session} theme="feed" />
       <div className="container">
         <div className="section-title">
           <h3>Feed</h3>

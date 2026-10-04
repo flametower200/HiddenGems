@@ -72,7 +72,7 @@ export default function CaricaVideo() {
   if (tipoAccount !== 'giocatore') {
     return (
       <main className="page">
-        <AppHeader session={session} />
+        <AppHeader session={session} theme="feed" />
         <div className="container">
           <p className="state-message">Solo i giocatori possono pubblicare video nel feed.</p>
         </div>

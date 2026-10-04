@@ -94,7 +94,7 @@ export default function Messaggi() {
 
   return (
     <main className="page">
-      <AppHeader session={session} />
+      <AppHeader session={session} theme="messaggi" />
       <div className="container container--wide">
         <h3>Messaggi</h3>
 
