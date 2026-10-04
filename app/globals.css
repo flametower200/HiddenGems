@@ -836,6 +836,36 @@ textarea { resize: vertical; font-family: var(--font-body); }
 .feed-empty h2 { margin: 0 0 7px; font-size: 1.25rem; }
 .feed-empty p { max-width: 360px; margin: 0 0 18px; color: var(--color-muted); font-size: 0.9rem; }
 
+.language-picker { margin: 0; }
+.language-picker__selected { display: flex; flex-wrap: wrap; gap: 7px; }
+.language-chip {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  gap: 7px;
+  padding: 3px 5px 3px 11px;
+  border: 1px solid #d4e3dc;
+  border-radius: 999px;
+  background: #eef5f1;
+  color: #24483a;
+  font-size: 0.8rem;
+  font-weight: 650;
+}
+.language-chip button {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: #dcebe3;
+  color: #24483a;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.language-chip button:hover { background: #c9dfd3; }
+
 @media (max-width: 640px) {
   .section-drag-preview {
     display: block;

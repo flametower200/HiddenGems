@@ -6,6 +6,14 @@ import { supabase } from '../lib/supabase';
 import { registraUtente, accedi } from '../lib/registration';
 import { caricaListaProfili } from '../lib/profileHelpers';
 import AppHeader from '../components/AppHeader';
+import LanguagePicker from '../components/LanguagePicker';
+import {
+  COUNTRY_OPTIONS,
+  COACH_LICENSE_OPTIONS,
+  CONTRACT_STATUS_OPTIONS,
+  FORMATION_OPTIONS,
+  countryLabel,
+} from '../lib/profileOptions';
 
 const RUOLI = ['Portiere', 'Difensore', 'Centrocampista', 'Attaccante'];
 const PIEDI = [
@@ -36,6 +44,9 @@ export default function Home() {
   const [piede, setPiede] = useState('destro');
   const [altezza, setAltezza] = useState('');
   const [patentino, setPatentino] = useState('');
+  const [statoContratto, setStatoContratto] = useState('');
+  const [moduloPreferito, setModuloPreferito] = useState('');
+  const [lingueParlate, setLingueParlate] = useState([]);
   const [societaAttuale, setSocietaAttuale] = useState('');
   const [genereSquadra, setGenereSquadra] = useState('maschile');
   const [annataSquadra, setAnnataSquadra] = useState('Prima Squadra');
@@ -57,30 +68,26 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (session) caricaProfili();
+    if (!session) return undefined;
+    let attivo = true;
+    caricaListaProfili(filtroRuolo)
+      .then((data) => { if (attivo) setProfili(data); })
+      .catch((error) => console.error('Errore caricamento profili:', error.message));
+    return () => { attivo = false; };
   }, [session, filtroRuolo]);
-
-  const caricaProfili = async () => {
-    try {
-      const data = await caricaListaProfili(filtroRuolo);
-      setProfili(data);
-    } catch (error) {
-      console.error('Errore caricamento profili:', error.message);
-    }
-  };
 
   // Riga informativa in più sotto il badge di ruolo, diversa per ogni tipo account.
   const infoAggiuntiva = (p) => {
     const d = p.dettaglio;
     if (!d) return null;
     if (p.tipo_account === 'giocatore') {
-      return [d.ruolo_principale, d.piede, d.nazione].filter(Boolean).join(' · ');
+      return [d.ruolo_principale, d.piede, countryLabel(d.nazione)].filter(Boolean).join(' · ');
     }
     if (p.tipo_account === 'allenatore') {
-      return [d.patentino, d.nazione].filter(Boolean).join(' · ');
+      return [d.patentino, countryLabel(d.nazione)].filter(Boolean).join(' · ');
     }
     if (p.tipo_account === 'scout') {
-      return d.societa_attuale || null;
+      return [d.societa_attuale, countryLabel(d.nazione)].filter(Boolean).join(' · ') || null;
     }
     if (p.tipo_account === 'societa') {
       return [d.categoria, d.annata_squadra].filter(Boolean).join(' · ');
@@ -97,27 +104,31 @@ export default function Home() {
       dettagli = {
         ruolo_principale: ruoloPrincipale, piede,
         altezza: altezza ? Number(altezza) : null,
-        nazione, regione: nazione === 'Italia' ? regione : null,
-        provincia: nazione === 'Italia' ? provincia : null,
+        stato_contratto: statoContratto || null,
+        lingue_parlate: lingueParlate.length ? lingueParlate : null,
+        nazione, regione: nazione === 'IT' ? regione : null,
+        provincia: nazione === 'IT' ? provincia : null,
       };
     } else if (tipoAccount === 'allenatore') {
       dettagli = {
-        patentino, nazione,
-        regione: nazione === 'Italia' ? regione : null,
-        provincia: nazione === 'Italia' ? provincia : null,
+        patentino, modulo_preferito: moduloPreferito || null,
+        lingue_parlate: lingueParlate.length ? lingueParlate : null,
+        nazione, regione: nazione === 'IT' ? regione : null,
+        provincia: nazione === 'IT' ? provincia : null,
       };
     } else if (tipoAccount === 'scout') {
       dettagli = {
-        societa_attuale: societaAttuale || null, nazione: nazione || null,
-        regione: nazione === 'Italia' ? regione : null,
-        provincia: nazione === 'Italia' ? provincia : null,
+        societa_attuale: societaAttuale || null,
+        nazione: nazione || null,
+        regione: nazione === 'IT' ? regione || null : null,
+        provincia: nazione === 'IT' ? provincia || null : null,
       };
     } else if (tipoAccount === 'societa') {
       dettagli = {
         categoria: categoria || null, genere_squadra: genereSquadra,
         annata_squadra: annataSquadra, nazione: nazione || null,
-        regione: nazione === 'Italia' ? regione : null,
-        provincia: nazione === 'Italia' ? provincia : null,
+        regione: nazione === 'IT' ? regione || null : null,
+        provincia: nazione === 'IT' ? provincia || null : null,
       };
     }
 
@@ -196,16 +207,18 @@ export default function Home() {
                       <input type="date" value={dataNascita} onChange={(e) => setDataNascita(e.target.value)} required />
                     </div>
                   )}
-                  {tipoAccount !== 'societa' && (
-                    <>
-                      <input type="text" placeholder="Nazione" value={nazione} onChange={(e) => setNazione(e.target.value)} required />
-                      {nazione === 'Italia' && (
-                        <div className="field-row">
-                          <input type="text" placeholder="Regione" value={regione} onChange={(e) => setRegione(e.target.value)} />
-                          <input type="text" placeholder="Provincia" value={provincia} onChange={(e) => setProvincia(e.target.value)} />
-                        </div>
-                      )}
-                    </>
+                  <div className="field">
+                    <label className="field__label" htmlFor="registration-country">Nazione</label>
+                    <select id="registration-country" value={nazione} onChange={(e) => { setNazione(e.target.value); setRegione(''); setProvincia(''); }} required={tipoAccount === 'giocatore' || tipoAccount === 'allenatore'}>
+                      <option value="">Seleziona una nazione…</option>
+                      {COUNTRY_OPTIONS.map((country) => <option key={country.value} value={country.value}>{country.label}</option>)}
+                    </select>
+                  </div>
+                  {nazione === 'IT' && (
+                    <div className="field-row">
+                      <input type="text" placeholder="Regione" value={regione} onChange={(e) => setRegione(e.target.value)} />
+                      <input type="text" placeholder="Provincia" value={provincia} onChange={(e) => setProvincia(e.target.value)} />
+                    </div>
                   )}
 
                   {tipoAccount === 'giocatore' && (
@@ -218,13 +231,35 @@ export default function Home() {
                         {PIEDI.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
                       </select>
                       <input type="number" placeholder="Altezza (cm)" value={altezza} onChange={(e) => setAltezza(e.target.value)} />
+                      <div className="field">
+                        <label className="field__label" htmlFor="registration-contract-status">Stato contrattuale</label>
+                        <select id="registration-contract-status" value={statoContratto} onChange={(e) => setStatoContratto(e.target.value)}>
+                          <option value="">Seleziona uno stato…</option>
+                          {CONTRACT_STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                        </select>
+                      </div>
+                      <LanguagePicker value={lingueParlate} onChange={setLingueParlate} />
                     </div>
                   )}
 
                   {tipoAccount === 'allenatore' && (
                     <div className="subform">
                       <h4>Dettagli allenatore</h4>
-                      <input type="text" placeholder="Patentino (es. UEFA B)" value={patentino} onChange={(e) => setPatentino(e.target.value)} required />
+                      <div className="field">
+                        <label className="field__label" htmlFor="registration-coach-license">Patentino</label>
+                        <select id="registration-coach-license" value={patentino} onChange={(e) => setPatentino(e.target.value)} required>
+                          <option value="">Seleziona un patentino…</option>
+                          {COACH_LICENSE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                        </select>
+                      </div>
+                      <div className="field">
+                        <label className="field__label" htmlFor="registration-formation">Modulo preferito</label>
+                        <select id="registration-formation" value={moduloPreferito} onChange={(e) => setModuloPreferito(e.target.value)}>
+                          <option value="">Seleziona un modulo…</option>
+                          {FORMATION_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                        </select>
+                      </div>
+                      <LanguagePicker value={lingueParlate} onChange={setLingueParlate} />
                     </div>
                   )}
 
@@ -246,7 +281,6 @@ export default function Home() {
                         {ANNATE.map((a) => <option key={a} value={a}>{a}</option>)}
                       </select>
                       <input type="text" placeholder="Categoria (opzionale)" value={categoria} onChange={(e) => setCategoria(e.target.value)} />
-                      <input type="text" placeholder="Nazione (opzionale)" value={nazione} onChange={(e) => setNazione(e.target.value)} />
                     </div>
                   )}
                 </>

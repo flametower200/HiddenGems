@@ -6,6 +6,18 @@ import { supabase } from '../../lib/supabase';
 import AppHeader from '../../components/AppHeader';
 import { getContatoriProfilo } from '../../lib/social';
 import { caricaProfiloCompleto, invalidaCacheProfili } from '../../lib/profileHelpers';
+import LanguagePicker from '../../components/LanguagePicker';
+import {
+  COUNTRY_OPTIONS,
+  COACH_LICENSE_OPTIONS,
+  CONTRACT_STATUS_OPTIONS,
+  FORMATION_OPTIONS,
+  canonicalContractStatus,
+  countryLabel,
+  normalizeCountry,
+  normalizeLanguageList,
+  withLegacyOption,
+} from '../../lib/profileOptions';
 
 const PIEDI = [
   { value: 'destro', label: 'Destro' },
@@ -33,12 +45,16 @@ export default function MioProfilo() {
   const [altezza, setAltezza] = useState('');
   const [peso, setPeso] = useState('');
   const [statoContratto, setStatoContratto] = useState('');
+  const [patentino, setPatentino] = useState('');
   const [moduloPreferito, setModuloPreferito] = useState('');
+  const [nazioneProfilo, setNazioneProfilo] = useState('');
+  const [regioneProfilo, setRegioneProfilo] = useState('');
+  const [provinciaProfilo, setProvinciaProfilo] = useState('');
   const [stileGioco, setStileGioco] = useState('');
   const [societaAttuale, setSocietaAttuale] = useState('');
   const [palmares, setPalmares] = useState('');
   const [categoria, setCategoria] = useState('');
-  const [linguePartlate, setLinguePartlate] = useState('');
+  const [linguePartlate, setLinguePartlate] = useState([]);
 
   const caricaProfilo = useCallback(async (userId) => {
     setLoading(true);
@@ -52,19 +68,23 @@ export default function MioProfilo() {
 
       setBio(p.bio || '');
       setFotoUrl(p.foto_url || '');
+      setNazioneProfilo(normalizeCountry(d?.nazione));
+      setRegioneProfilo(d?.regione || '');
+      setProvinciaProfilo(d?.provincia || '');
       if (p.tipo_account === 'giocatore' && d) {
         setInCercaSquadra(!!d.in_cerca_squadra);
         setRuoloSecondario(d.ruolo_secondario || '');
         setPiede(d.piede || 'destro');
         setAltezza(d.altezza ?? '');
         setPeso(d.peso ?? '');
-        setStatoContratto(d.stato_contratto || '');
-        setLinguePartlate((d.lingue_parlate || []).join(', '));
+        setStatoContratto(canonicalContractStatus(d.stato_contratto));
+        setLinguePartlate(normalizeLanguageList((d.lingue_parlate || []).flatMap((language) => language.split(','))));
       } else if (p.tipo_account === 'allenatore' && d) {
         setInCercaSquadra(!!d.in_cerca_squadra);
+        setPatentino(d.patentino || '');
         setModuloPreferito(d.modulo_preferito || '');
         setStileGioco(d.stile_gioco || '');
-        setLinguePartlate((d.lingue_parlate || []).join(', '));
+        setLinguePartlate(normalizeLanguageList((d.lingue_parlate || []).flatMap((language) => language.split(','))));
       } else if (p.tipo_account === 'scout' && d) {
         setInCercaSquadra(!!d.in_cerca_squadra);
         setSocietaAttuale(d.societa_attuale || '');
@@ -123,7 +143,6 @@ export default function MioProfilo() {
 
     let errDettaglio = null;
     if (profilo.tipo_account === 'giocatore') {
-      const lingue = linguePartlate.split(',').map((s) => s.trim()).filter(Boolean);
       ({ error: errDettaglio } = await supabase.from('player_details').update({
         in_cerca_squadra: inCercaSquadra,
         ruolo_secondario: ruoloSecondario || null,
@@ -131,20 +150,29 @@ export default function MioProfilo() {
         altezza: altezza ? Number(altezza) : null,
         peso: peso ? Number(peso) : null,
         stato_contratto: statoContratto || null,
-        lingue_parlate: lingue.length ? lingue : null,
+        lingue_parlate: linguePartlate.length ? linguePartlate : null,
+        nazione: nazioneProfilo,
+        regione: nazioneProfilo === 'IT' ? regioneProfilo || null : null,
+        provincia: nazioneProfilo === 'IT' ? provinciaProfilo || null : null,
       }).eq('profile_id', user.id));
     } else if (profilo.tipo_account === 'allenatore') {
-      const lingue = linguePartlate.split(',').map((s) => s.trim()).filter(Boolean);
       ({ error: errDettaglio } = await supabase.from('coach_details').update({
         in_cerca_squadra: inCercaSquadra,
+        patentino,
         modulo_preferito: moduloPreferito || null,
         stile_gioco: stileGioco || null,
-        lingue_parlate: lingue.length ? lingue : null,
+        lingue_parlate: linguePartlate.length ? linguePartlate : null,
+        nazione: nazioneProfilo,
+        regione: nazioneProfilo === 'IT' ? regioneProfilo || null : null,
+        provincia: nazioneProfilo === 'IT' ? provinciaProfilo || null : null,
       }).eq('profile_id', user.id));
     } else if (profilo.tipo_account === 'scout') {
       ({ error: errDettaglio } = await supabase.from('scout_details').update({
         in_cerca_squadra: inCercaSquadra,
         societa_attuale: societaAttuale || null,
+        nazione: nazioneProfilo || null,
+        regione: nazioneProfilo === 'IT' ? regioneProfilo || null : null,
+        provincia: nazioneProfilo === 'IT' ? provinciaProfilo || null : null,
       }).eq('profile_id', user.id));
     } else if (profilo.tipo_account === 'societa') {
       ({ error: errDettaglio } = await supabase.from('club_details').update({
@@ -152,6 +180,9 @@ export default function MioProfilo() {
         in_cerca_giocatori: inCercaGiocatori,
         palmares: palmares || null,
         categoria: categoria || null,
+        nazione: nazioneProfilo || null,
+        regione: nazioneProfilo === 'IT' ? regioneProfilo || null : null,
+        provincia: nazioneProfilo === 'IT' ? provinciaProfilo || null : null,
       }).eq('profile_id', user.id));
     }
 
@@ -196,8 +227,8 @@ export default function MioProfilo() {
                   <p><strong>Piede:</strong> {dettaglio.piede || '—'}</p>
                   <p><strong>Altezza/Peso:</strong> {dettaglio.altezza || '—'} cm / {dettaglio.peso || '—'} kg</p>
                   <p><strong>In cerca di squadra:</strong> {dettaglio.in_cerca_squadra ? 'Sì' : 'No'}</p>
-                  <p><strong>Stato:</strong> {dettaglio.stato_contratto || '—'}</p>
-                  <p style={{ marginBottom: 0 }}><strong>Nazione:</strong> {dettaglio.nazione} {dettaglio.regione ? `(${dettaglio.regione}, ${dettaglio.provincia || ''})` : ''}</p>
+                  <p><strong>Stato:</strong> {CONTRACT_STATUS_OPTIONS.find((option) => option.value === canonicalContractStatus(dettaglio.stato_contratto))?.label || dettaglio.stato_contratto || '—'}</p>
+                  <p style={{ marginBottom: 0 }}><strong>Nazione:</strong> {countryLabel(dettaglio.nazione)} {dettaglio.regione ? `(${dettaglio.regione}, ${dettaglio.provincia || ''})` : ''}</p>
                 </>
               )}
               {profilo.tipo_account === 'allenatore' && dettaglio && (
@@ -205,7 +236,7 @@ export default function MioProfilo() {
                   <p><strong>Patentino:</strong> {dettaglio.patentino}</p>
                   <p><strong>Modulo preferito:</strong> {dettaglio.modulo_preferito || '—'}</p>
                   <p><strong>In cerca di squadra:</strong> {dettaglio.in_cerca_squadra ? 'Sì' : 'No'}</p>
-                  <p style={{ marginBottom: 0 }}><strong>Nazione:</strong> {dettaglio.nazione}</p>
+                  <p style={{ marginBottom: 0 }}><strong>Nazione:</strong> {countryLabel(dettaglio.nazione)}</p>
                 </>
               )}
               {profilo.tipo_account === 'scout' && dettaglio && (
@@ -243,6 +274,19 @@ export default function MioProfilo() {
               <label className="field__label">Descrizione (max 500 caratteri)</label>
               <textarea value={bio} maxLength={500} onChange={(e) => setBio(e.target.value)} rows={4} />
             </div>
+            <div className="field">
+              <label className="field__label" htmlFor="profile-country">Nazione</label>
+              <select id="profile-country" value={nazioneProfilo} onChange={(e) => { setNazioneProfilo(e.target.value); setRegioneProfilo(''); setProvinciaProfilo(''); }} required={profilo.tipo_account === 'giocatore' || profilo.tipo_account === 'allenatore'}>
+                <option value="">Seleziona una nazione…</option>
+                {withLegacyOption(COUNTRY_OPTIONS, nazioneProfilo).map((country) => <option key={country.value} value={country.value}>{country.label}</option>)}
+              </select>
+            </div>
+            {nazioneProfilo === 'IT' && (
+              <div className="field-row">
+                <input type="text" placeholder="Regione" value={regioneProfilo} onChange={(e) => setRegioneProfilo(e.target.value)} />
+                <input type="text" placeholder="Provincia" value={provinciaProfilo} onChange={(e) => setProvinciaProfilo(e.target.value)} />
+              </div>
+            )}
 
             {profilo.tipo_account === 'giocatore' && (
               <>
@@ -255,17 +299,35 @@ export default function MioProfilo() {
                   <input type="number" placeholder="Altezza (cm)" value={altezza} onChange={(e) => setAltezza(e.target.value)} />
                   <input type="number" placeholder="Peso (kg)" value={peso} onChange={(e) => setPeso(e.target.value)} />
                 </div>
-                <input type="text" placeholder="Stato (es. svincolato, prestito, club)" value={statoContratto} onChange={(e) => setStatoContratto(e.target.value)} />
-                <input type="text" placeholder="Lingue parlate (separate da virgola)" value={linguePartlate} onChange={(e) => setLinguePartlate(e.target.value)} />
+                <div className="field">
+                  <label className="field__label" htmlFor="profile-contract-status">Stato contrattuale</label>
+                  <select id="profile-contract-status" value={statoContratto} onChange={(e) => setStatoContratto(e.target.value)}>
+                    <option value="">Seleziona uno stato…</option>
+                    {withLegacyOption(CONTRACT_STATUS_OPTIONS, statoContratto).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                  </select>
+                </div>
+                <LanguagePicker value={linguePartlate} onChange={setLinguePartlate} />
               </>
             )}
 
             {profilo.tipo_account === 'allenatore' && (
               <>
                 <label className="checkbox-field"><input type="checkbox" checked={inCercaSquadra} onChange={(e) => setInCercaSquadra(e.target.checked)} /> In cerca di squadra</label>
-                <input type="text" placeholder="Modulo preferito" value={moduloPreferito} onChange={(e) => setModuloPreferito(e.target.value)} />
+                <div className="field">
+                  <label className="field__label" htmlFor="profile-coach-license">Patentino</label>
+                  <select id="profile-coach-license" value={patentino} onChange={(e) => setPatentino(e.target.value)} required>
+                    {withLegacyOption(COACH_LICENSE_OPTIONS, patentino).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                  </select>
+                </div>
+                <div className="field">
+                  <label className="field__label" htmlFor="profile-formation">Modulo preferito</label>
+                  <select id="profile-formation" value={moduloPreferito} onChange={(e) => setModuloPreferito(e.target.value)}>
+                    <option value="">Seleziona un modulo…</option>
+                    {withLegacyOption(FORMATION_OPTIONS, moduloPreferito).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                  </select>
+                </div>
                 <input type="text" placeholder="Stile di gioco" value={stileGioco} onChange={(e) => setStileGioco(e.target.value)} />
-                <input type="text" placeholder="Lingue parlate (separate da virgola)" value={linguePartlate} onChange={(e) => setLinguePartlate(e.target.value)} />
+                <LanguagePicker value={linguePartlate} onChange={setLinguePartlate} />
               </>
             )}
 

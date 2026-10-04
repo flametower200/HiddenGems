@@ -8,6 +8,7 @@ import AppHeader from '../../../components/AppHeader';
 import { avviaConversazione } from '../../../lib/chat';
 import { segui, smettiDiSeguire, aggiungiPreferito, rimuoviPreferito, controllaStato, getContatoriProfilo } from '../../../lib/social';
 import { caricaProfiloCompleto } from '../../../lib/profileHelpers';
+import { countryLabel } from '../../../lib/profileOptions';
 
 export default function ProfiloPubblico() {
   const { id } = useParams();
@@ -130,7 +131,7 @@ export default function ProfiloPubblico() {
               <p><strong>Ruolo:</strong> {dettaglio.ruolo_principale} {dettaglio.ruolo_secondario ? `/ ${dettaglio.ruolo_secondario}` : ''}</p>
               <p><strong>Piede:</strong> {dettaglio.piede || '—'}</p>
               <p><strong>In cerca di squadra:</strong> {dettaglio.in_cerca_squadra ? 'Sì' : 'No'}</p>
-              <p style={{ marginBottom: 0 }}><strong>Nazione:</strong> {dettaglio.nazione}</p>
+              <p style={{ marginBottom: 0 }}><strong>Nazione:</strong> {countryLabel(dettaglio.nazione)}</p>
             </>
           )}
           {profilo.tipo_account === 'allenatore' && dettaglio && (
@@ -140,7 +141,10 @@ export default function ProfiloPubblico() {
             </>
           )}
           {profilo.tipo_account === 'scout' && dettaglio && (
-            <p style={{ marginBottom: 0 }}><strong>Società attuale:</strong> {dettaglio.societa_attuale || '—'}</p>
+            <>
+              <p><strong>Società attuale:</strong> {dettaglio.societa_attuale || '—'}</p>
+              <p style={{ marginBottom: 0 }}><strong>Nazione:</strong> {countryLabel(dettaglio.nazione)}</p>
+            </>
           )}
           {profilo.tipo_account === 'societa' && dettaglio && (
             <>
