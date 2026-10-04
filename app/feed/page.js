@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { supabase } from '../../lib/supabase';
 import AppHeader from '../../components/AppHeader';
 import { getFeed, metti_like, togli_like, getCommenti, aggiungiCommento } from '../../lib/feed';
@@ -59,7 +60,7 @@ function PostCard({ post, sessionUserId }) {
   return (
     <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px' }}>
-        <img src={post.autore?.foto_url || 'https://placehold.co/36x36?text=%20'} alt="" className="avatar" style={{ width: 36, height: 36 }} />
+        <Image src={post.autore?.foto_url || 'https://placehold.co/36x36?text=%20'} alt="" width={36} height={36} unoptimized className="avatar" style={{ width: 36, height: 36 }} />
         <Link href={post.autore_id === sessionUserId ? '/profilo' : `/profilo/${post.autore_id}`} style={{ fontWeight: 600, textDecoration: 'none', color: 'inherit' }}>
           {post.autore ? `${post.autore.nome} ${post.autore.cognome || ''}` : 'Giocatore'}
         </Link>
@@ -69,7 +70,7 @@ function PostCard({ post, sessionUserId }) {
         src={post.video_url}
         controls
         playsInline
-        preload="metadata"
+        preload="none"
         style={{ width: '100%', maxHeight: 480, backgroundColor: '#000', display: 'block' }}
       />
 
@@ -120,13 +121,14 @@ export default function Feed() {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       if (session) {
-        const { data: profilo } = await supabase.from('profiles').select('tipo_account').eq('id', session.user.id).single();
-        setTipoAccount(profilo?.tipo_account || null);
-        try {
-          setPost(await getFeed());
-        } catch (err) {
+        const profilePromise = supabase.from('profiles').select('tipo_account').eq('id', session.user.id).single();
+        const feedPromise = getFeed({ userId: session.user.id }).catch((err) => {
           console.error('Errore caricamento feed:', err.message);
-        }
+          return [];
+        });
+        const [{ data: profilo }, feedPosts] = await Promise.all([profilePromise, feedPromise]);
+        setTipoAccount(profilo?.tipo_account || null);
+        setPost(feedPosts);
       }
       setLoading(false);
     });

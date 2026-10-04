@@ -3,8 +3,6 @@
    Ispirato al football moderno e all'estetica social mobile.
    ===================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
-
 :root {
   --color-bg: #f7f7f6;
   --color-surface: rgba(255, 255, 255, 0.96);
@@ -29,8 +27,8 @@
   --color-scout-tint: #fff3b7;
   --color-societa: #4a3f8a;
   --color-societa-tint: #e9e4ff;
-  --font-display: 'Manrope', sans-serif;
-  --font-body: 'Inter', sans-serif;
+  --font-display: var(--font-manrope), sans-serif;
+  --font-body: var(--font-inter), sans-serif;
   --radius-sharp: 18px;
   --radius-pill: 999px;
   --shadow-soft: 0 18px 40px rgba(12, 30, 28, 0.10);
