@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import AppHeader from '../../components/AppHeader';
 import { cambiaPassword, eliminaAccount } from '../../lib/accountSettings';
+import { esci } from '../../lib/registration';
 
 export default function Impostazioni() {
   const [session, setSession] = useState(null);
@@ -54,6 +55,16 @@ export default function Impostazioni() {
       <AppHeader session={session} theme="impostazioni" />
       <div className="container">
         <h3>Impostazioni account</h3>
+
+        <div className="card card--panel" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 20 }}>
+          <div>
+            <h4 style={{ margin: 0 }}>Sessione</h4>
+            <p style={{ margin: 4, color: 'var(--color-muted)' }}>Esci dal tuo account</p>
+          </div>
+          <button type="button" onClick={() => esci()} className="btn btn--outline">
+            Logout
+          </button>
+        </div>
 
         <form onSubmit={handleCambiaPassword} className="card card--panel" style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
           <h4 style={{ margin: 0 }}>Cambia password</h4>

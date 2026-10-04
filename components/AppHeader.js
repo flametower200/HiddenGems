@@ -1,7 +1,72 @@
 'use client';
 
 import Link from 'next/link';
-import { esci } from '../lib/registration';
+
+function IconHome() {
+  return (
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <path d="M10 30L32 12L54 30V50C54 52.2 52.2 54 50 54H14C11.8 54 10 52.2 10 50V30Z" fill="none" stroke="currentColor" strokeWidth="4" strokeLinejoin="round" />
+      <path d="M24 54V36H40V54" fill="none" stroke="currentColor" strokeWidth="4" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconFeed() {
+  return (
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <circle cx="32" cy="32" r="22" fill="none" stroke="currentColor" strokeWidth="4" />
+      <path d="M28 22L44 32L28 42V22Z" fill="currentColor" />
+    </svg>
+  );
+}
+
+function IconSearch() {
+  return (
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <circle cx="28" cy="28" r="16" fill="none" stroke="currentColor" strokeWidth="4" />
+      <path d="M40 40L54 54" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconMessages() {
+  return (
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <path d="M16 20C16 16.7 18.7 14 22 14H42C45.3 14 48 16.7 48 20V34C48 37.3 45.3 40 42 40H31L23 48V40H22C18.7 40 16 37.3 16 34V20Z" fill="none" stroke="currentColor" strokeWidth="4" strokeLinejoin="round" />
+      <circle cx="23" cy="27" r="2.5" fill="currentColor" />
+      <circle cx="32" cy="27" r="2.5" fill="currentColor" />
+      <circle cx="41" cy="27" r="2.5" fill="currentColor" />
+    </svg>
+  );
+}
+
+function IconProfile() {
+  return (
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <rect x="14" y="14" width="36" height="36" rx="10" fill="none" stroke="currentColor" strokeWidth="4" />
+      <circle cx="32" cy="26" r="8" fill="none" stroke="currentColor" strokeWidth="4" />
+      <path d="M20 46C23 39 27 36 32 36C37 36 41 39 44 46" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconSettings() {
+  return (
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <circle cx="32" cy="32" r="9" fill="none" stroke="currentColor" strokeWidth="4" />
+      <path d="M32 10V16M32 48V54M54 32H48M16 32H10M47 17L42 22M22 42L17 47M47 47L42 42M22 22L17 17" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+const NAV_ITEMS = [
+  { href: '/', label: 'Bacheca', icon: <IconHome />, title: 'Bacheca' },
+  { href: '/feed', label: 'Feed', icon: <IconFeed />, title: 'Feed' },
+  { href: '/cerca', label: 'Cerca', icon: <IconSearch />, title: 'Cerca' },
+  { href: '/messaggi', label: 'Messaggi', icon: <IconMessages />, title: 'Messaggi' },
+  { href: '/profilo', label: 'Profilo', icon: <IconProfile />, title: 'Profilo' },
+  { href: '/impostazioni', label: 'Impostazioni', icon: <IconSettings />, title: 'Impostazioni' },
+];
 
 export default function AppHeader({ session, theme = 'bacheca' }) {
   return (
@@ -13,19 +78,17 @@ export default function AppHeader({ session, theme = 'bacheca' }) {
         </div>
 
         <nav className="app-header__nav" aria-label="Navigazione principale">
-          <Link href="/" className="nav-link">Bacheca</Link>
-          <Link href="/feed" className="nav-link">Feed</Link>
-          <Link href="/cerca" className="nav-link">Cerca</Link>
-          <Link href="/messaggi" className="nav-link">Messaggi</Link>
-          <Link href="/profilo" className="nav-link">Profilo</Link>
-          <Link href="/impostazioni" className="nav-link">Impostazioni</Link>
-          <button
-            type="button"
-            onClick={() => esci()}
-            className="btn btn--sm btn--outline app-header__logout"
-          >
-            Logout
-          </button>
+          {NAV_ITEMS.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="nav-link"
+              aria-label={item.label}
+              title={item.title}
+            >
+              <span className="nav-link__icon" aria-hidden="true">{item.icon}</span>
+            </Link>
+          ))}
         </nav>
       </div>
     </header>
