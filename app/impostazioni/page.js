@@ -53,10 +53,16 @@ export default function Impostazioni() {
   return (
     <main className="page">
       <AppHeader session={session} theme="impostazioni" />
-      <div className="container">
-        <h3>Impostazioni account</h3>
+      <div className="container settings-screen">
+        <div className="page-heading">
+          <div>
+            <p className="page-eyebrow">HIDDENGEMS / ACCOUNT</p>
+            <h1>Impostazioni</h1>
+            <p>Gestisci la sicurezza e la sessione del tuo account.</p>
+          </div>
+        </div>
 
-        <div className="card card--panel" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 20 }}>
+        <div className="settings-session">
           <div>
             <h4 style={{ margin: 0 }}>Sessione</h4>
             <p style={{ margin: 4, color: 'var(--color-muted)' }}>Esci dal tuo account</p>

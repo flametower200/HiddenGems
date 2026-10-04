@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { supabase } from '../../lib/supabase';
 import AppHeader from '../../components/AppHeader';
+import UserAvatar from '../../components/UserAvatar';
 import { getFeed, metti_like, togli_like, getCommenti, aggiungiCommento, eliminaVideo } from '../../lib/feed';
 
 function IconLike({ active }) {
@@ -104,7 +104,7 @@ function PostCard({ post, sessionUserId, onDelete }) {
     <article className={`feed-post${eliminando ? ' feed-post--deleting' : ''}`}>
       <header className="feed-post__header">
         <Link className="feed-post__author" href={isAuthor ? '/profilo' : `/profilo/${post.autore_id}`}>
-          <Image src={post.autore?.foto_url || 'https://placehold.co/44x44?text=%20'} alt="" width={44} height={44} unoptimized className="feed-post__avatar" />
+          <UserAvatar src={post.autore?.foto_url} name={`${post.autore?.nome || ''} ${post.autore?.cognome || ''}`} size={44} className="feed-post__avatar" />
           <span className="feed-post__identity">
             <strong>{post.autore ? `${post.autore.nome} ${post.autore.cognome || ''}` : 'Giocatore'}</strong>
             <span>{dataPubblicazione || 'Video giocatore'}</span>

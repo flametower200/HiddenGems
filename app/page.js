@@ -7,12 +7,12 @@ import { registraUtente, accedi } from '../lib/registration';
 import { caricaListaProfili } from '../lib/profileHelpers';
 import AppHeader from '../components/AppHeader';
 import LanguagePicker from '../components/LanguagePicker';
+import ProfileCard from '../components/ProfileCard';
 import {
   COUNTRY_OPTIONS,
   COACH_LICENSE_OPTIONS,
   CONTRACT_STATUS_OPTIONS,
   FORMATION_OPTIONS,
-  countryLabel,
 } from '../lib/profileOptions';
 
 const RUOLI = ['Portiere', 'Difensore', 'Centrocampista', 'Attaccante'];
@@ -22,6 +22,13 @@ const PIEDI = [
   { value: 'ambidestro', label: 'Ambidestro' },
 ];
 const ANNATE = ['U14', 'U15', 'U16', 'U17', 'U18', 'U19', 'Prima Squadra'];
+const ETICHETTE_FILTRO = {
+  tutti: 'Profili nella rete',
+  giocatore: 'Giocatori',
+  allenatore: 'Allenatori',
+  scout: 'Scout',
+  societa: 'Società',
+};
 
 export default function Home() {
   const [session, setSession] = useState(null);
@@ -75,25 +82,6 @@ export default function Home() {
       .catch((error) => console.error('Errore caricamento profili:', error.message));
     return () => { attivo = false; };
   }, [session, filtroRuolo]);
-
-  // Riga informativa in più sotto il badge di ruolo, diversa per ogni tipo account.
-  const infoAggiuntiva = (p) => {
-    const d = p.dettaglio;
-    if (!d) return null;
-    if (p.tipo_account === 'giocatore') {
-      return [d.ruolo_principale, d.piede, countryLabel(d.nazione)].filter(Boolean).join(' · ');
-    }
-    if (p.tipo_account === 'allenatore') {
-      return [d.patentino, countryLabel(d.nazione)].filter(Boolean).join(' · ');
-    }
-    if (p.tipo_account === 'scout') {
-      return [d.societa_attuale, countryLabel(d.nazione)].filter(Boolean).join(' · ') || null;
-    }
-    if (p.tipo_account === 'societa') {
-      return [d.categoria, d.annata_squadra].filter(Boolean).join(' · ');
-    }
-    return null;
-  };
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -304,35 +292,41 @@ export default function Home() {
   return (
     <main className="page">
       <AppHeader session={session} theme="bacheca" />
-      <div className="container container--wide">
-        <div className="section-title">
-          <h3>Bacheca scouting</h3>
-          <select value={filtroRuolo} onChange={(e) => setFiltroRuolo(e.target.value)}>
+      <div className="container container--wide directory-screen">
+        <div className="directory-heading">
+          <div>
+            <p className="page-eyebrow">SCOUTING / NETWORK</p>
+            <h1>Bacheca scouting</h1>
+            <p>Talenti, staff e società. Un punto di partenza per la prossima opportunità.</p>
+          </div>
+          <label className="directory-filter">
+            <span>Esplora per ruolo</span>
+            <select value={filtroRuolo} onChange={(e) => setFiltroRuolo(e.target.value)}>
             <option value="tutti">Tutti i profili</option>
             <option value="giocatore">Giocatori</option>
             <option value="allenatore">Allenatori</option>
             <option value="scout">Scout</option>
             <option value="societa">Società</option>
-          </select>
+            </select>
+          </label>
         </div>
 
-        <div className="card-stack">
+        <div className="directory-results-heading">
+          <h2>{ETICHETTE_FILTRO[filtroRuolo] || ETICHETTE_FILTRO.tutti}</h2>
+          <span>{profili.length} {profili.length === 1 ? 'profilo' : 'profili'}</span>
+        </div>
+
+        <div className="talent-grid">
           {profili.length === 0 ? (
-            <p className="state-message">Nessun profilo trovato per questa categoria.</p>
+            <div className="directory-empty">
+              <span className="directory-empty__mark" aria-hidden="true">HG</span>
+              <h2>Nessun profilo ancora</h2>
+              <p>Prova un altro filtro o torna più tardi per scoprire nuovi membri della rete.</p>
+              {filtroRuolo !== 'tutti' && <button type="button" className="btn btn--outline" onClick={() => setFiltroRuolo('tutti')}>Mostra tutti i profili</button>}
+              {filtroRuolo === 'tutti' && <Link className="btn btn--secondary" href="/cerca">Cerca nella rete</Link>}
+            </div>
           ) : (
-            profili.map((p) => (
-              <Link
-                key={p.id}
-                href={p.id === session.user.id ? '/profilo' : `/profilo/${p.id}`}
-                className={`card card--clickable card--role-${p.tipo_account}`}
-              >
-                <h4 style={{ marginBottom: 4 }}>{p.nome} {p.cognome}</h4>
-                <span className={`badge badge--${p.tipo_account}`}>{p.tipo_account}</span>
-                {infoAggiuntiva(p) && (
-                  <p style={{ marginTop: 8, marginBottom: 0, fontSize: '0.88rem' }}>{infoAggiuntiva(p)}</p>
-                )}
-              </Link>
-            ))
+            profili.map((profile) => <ProfileCard key={profile.id} profile={profile} currentUserId={session.user.id} />)
           )}
         </div>
       </div>

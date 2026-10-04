@@ -284,17 +284,21 @@ export default function AppHeader({ session, theme = 'bacheca' }) {
         </div>
 
         <nav className="app-header__nav" aria-label="Navigazione principale">
-          {NAV_ITEMS.map((item) => (
+            {NAV_ITEMS.map((item) => {
+              const active = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+              return (
             <Link
               key={item.href}
               href={item.href}
-              className="nav-link"
+                className={`nav-link${active ? ' is-active' : ''}`}
               aria-label={item.label}
               title={item.title}
+                aria-current={active ? 'page' : undefined}
             >
               <span className="nav-link__icon" aria-hidden="true">{item.icon}</span>
             </Link>
-          ))}
+              );
+            })}
         </nav>
       </div>
       {previewSection?.pathname === pathname && typeof document !== 'undefined' && createPortal(

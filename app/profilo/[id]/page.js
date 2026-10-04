@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '../../../lib/supabase';
 import AppHeader from '../../../components/AppHeader';
+import UserAvatar from '../../../components/UserAvatar';
 import { avviaConversazione } from '../../../lib/chat';
 import { segui, smettiDiSeguire, aggiungiPreferito, rimuoviPreferito, controllaStato, getContatoriProfilo } from '../../../lib/social';
 import { caricaProfiloCompleto } from '../../../lib/profileHelpers';
@@ -96,13 +96,15 @@ export default function ProfiloPubblico() {
   if (!profilo) return <div className="state-message">Profilo non trovato.</div>;
 
   return (
-    <main className="page">
+    <main className="page profile-screen">
       <AppHeader session={session} theme="profilo" />
-      <div className="container">
+      <div className="container profile-screen__container">
+        <section className="profile-overview">
         <div className="profile-head">
-          <Image src={profilo.foto_url || 'https://placehold.co/80x80?text=%20'} alt="" width={80} height={80} unoptimized loading="eager" className="avatar" />
+          <UserAvatar src={profilo.foto_url} name={`${profilo.nome} ${profilo.cognome || ''}`} size={88} className="avatar" />
           <div>
-            <h2 style={{ marginBottom: 2 }}>{profilo.nome} {profilo.cognome}</h2>
+            <p className="page-eyebrow">PROFILO / SCOUTING</p>
+            <h1>{profilo.nome} {profilo.cognome}</h1>
             <span className={`badge badge--${profilo.tipo_account}`}>{profilo.tipo_account}</span>
           </div>
         </div>
@@ -124,8 +126,9 @@ export default function ProfiloPubblico() {
             {stato.preferito ? '★ Nei preferiti' : '☆ Aggiungi ai preferiti'}
           </button>
         </div>
+        </section>
 
-        <div className="card card--panel">
+        <section className="card card--panel profile-details">
           {profilo.tipo_account === 'giocatore' && dettaglio && (
             <>
               <p><strong>Ruolo:</strong> {dettaglio.ruolo_principale} {dettaglio.ruolo_secondario ? `/ ${dettaglio.ruolo_secondario}` : ''}</p>
@@ -153,7 +156,7 @@ export default function ProfiloPubblico() {
             </>
           )}
           {profilo.bio && <p style={{ marginTop: 12, marginBottom: 0 }}>{profilo.bio}</p>}
-        </div>
+        </section>
       </div>
     </main>
   );

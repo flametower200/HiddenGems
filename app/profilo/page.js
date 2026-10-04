@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import Image from 'next/image';
 import { supabase } from '../../lib/supabase';
 import AppHeader from '../../components/AppHeader';
+import UserAvatar from '../../components/UserAvatar';
 import { getContatoriProfilo } from '../../lib/social';
 import { caricaProfiloCompleto, invalidaCacheProfili } from '../../lib/profileHelpers';
 import LanguagePicker from '../../components/LanguagePicker';
@@ -201,26 +201,29 @@ export default function MioProfilo() {
   if (!profilo) return <div className="state-message">Profilo non trovato.</div>;
 
   return (
-    <main className="page">
+    <main className="page profile-screen">
       <AppHeader session={session} theme="profilo" />
-      <div className="container">
-        <div className="profile-head">
-          <Image src={fotoUrl || 'https://placehold.co/80x80?text=%20'} alt="" width={80} height={80} unoptimized loading="eager" className="avatar" />
-          <div>
-            <h2 style={{ marginBottom: 2 }}>{profilo.nome} {profilo.cognome}</h2>
-            <span className={`badge badge--${profilo.tipo_account}`}>{profilo.tipo_account}</span>
+      <div className="container profile-screen__container">
+        <section className="profile-overview">
+          <div className="profile-head">
+            <UserAvatar src={fotoUrl} name={`${profilo.nome} ${profilo.cognome || ''}`} size={88} className="avatar" />
+            <div>
+              <p className="page-eyebrow">IL TUO PROFILO</p>
+              <h1>{profilo.nome} {profilo.cognome}</h1>
+              <span className={`badge badge--${profilo.tipo_account}`}>{profilo.tipo_account}</span>
+            </div>
           </div>
-        </div>
 
-        <div className="stat-row">
-          <div className="stat-chip"><span className="stat-chip__value">{contatori.follower ?? 0}</span><span className="stat-chip__label">follower</span></div>
-          <div className="stat-chip"><span className="stat-chip__value">{contatori.seguiti ?? 0}</span><span className="stat-chip__label">seguiti</span></div>
-          <div className="stat-chip"><span className="stat-chip__value">{contatori.preferiti ?? 0}</span><span className="stat-chip__label">nei preferiti</span></div>
-        </div>
+          <div className="stat-row profile-overview__stats">
+            <div className="stat-chip"><span className="stat-chip__value">{contatori.follower ?? 0}</span><span className="stat-chip__label">follower</span></div>
+            <div className="stat-chip"><span className="stat-chip__value">{contatori.seguiti ?? 0}</span><span className="stat-chip__label">seguiti</span></div>
+            <div className="stat-chip"><span className="stat-chip__value">{contatori.preferiti ?? 0}</span><span className="stat-chip__label">nei preferiti</span></div>
+          </div>
+        </section>
 
         {!modifica ? (
           <>
-            <div className="card card--panel">
+            <section className="profile-details">
               {profilo.tipo_account === 'giocatore' && dettaglio && (
                 <>
                   <p><strong>Ruolo:</strong> {dettaglio.ruolo_principale} {dettaglio.ruolo_secondario ? `/ ${dettaglio.ruolo_secondario}` : ''}</p>
@@ -253,17 +256,17 @@ export default function MioProfilo() {
                 </>
               )}
               {profilo.bio && <p style={{ marginTop: 12, marginBottom: 0 }}>{profilo.bio}</p>}
-            </div>
-            <button onClick={() => setModifica(true)} className="btn btn--primary" style={{ marginTop: 16 }}>
+            </section>
+            <button onClick={() => setModifica(true)} className="btn btn--primary profile-edit-button">
               Modifica profilo
             </button>
           </>
         ) : (
-          <div className="card card--panel" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div className="card card--panel profile-editor">
             <div className="field">
               <label className="field__label">Foto profilo</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <Image src={fotoUrl || 'https://placehold.co/56x56?text=%20'} alt="" width={56} height={56} unoptimized className="avatar" style={{ width: 56, height: 56 }} />
+                <UserAvatar src={fotoUrl} name={`${profilo.nome} ${profilo.cognome || ''}`} size={56} className="avatar" />
                 <label className="btn btn--outline btn--sm" style={{ cursor: 'pointer' }}>
                   {caricandoFoto ? 'Caricamento...' : 'Scegli immagine'}
                   <input type="file" accept="image/*" onChange={handleCaricaFoto} disabled={caricandoFoto} style={{ display: 'none' }} />

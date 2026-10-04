@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
 import AppHeader from '../../components/AppHeader';
+import ProfileCard from '../../components/ProfileCard';
 import { cerca } from '../../lib/search';
 import {
   COUNTRY_OPTIONS,
@@ -11,7 +11,6 @@ import {
   CONTRACT_STATUS_OPTIONS,
   FORMATION_OPTIONS,
   LANGUAGE_OPTIONS,
-  countryLabel,
 } from '../../lib/profileOptions';
 
 const RUOLI = ['Portiere', 'Difensore', 'Centrocampista', 'Attaccante'];
@@ -68,15 +67,7 @@ export default function Cerca() {
     setRisultati(null);
   };
 
-  const infoAggiuntiva = (p) => {
-    const d = p.dettaglio;
-    if (!d) return null;
-    if (p.tipo_account === 'giocatore') return [d.ruolo_principale, d.piede, countryLabel(d.nazione)].filter(Boolean).join(' · ');
-    if (p.tipo_account === 'allenatore') return [d.patentino, countryLabel(d.nazione)].filter(Boolean).join(' · ');
-    if (p.tipo_account === 'scout') return [d.societa_attuale, countryLabel(d.nazione)].filter(Boolean).join(' · ') || null;
-    if (p.tipo_account === 'societa') return [d.categoria, d.annata_squadra].filter(Boolean).join(' · ');
-    return null;
-  };
+  const filtriAttivi = Object.values(filtri).filter((value) => value !== '' && value !== undefined && value !== false).length;
 
   if (loading) return <div className="state-message">Caricamento...</div>;
   if (!session) return <div className="state-message">Devi accedere per vedere questa pagina.</div>;
@@ -84,21 +75,41 @@ export default function Cerca() {
   return (
     <main className="page">
       <AppHeader session={session} theme="cerca" />
-      <div className="container container--wide">
-        <h3>Cerca</h3>
+      <div className="container container--wide search-screen">
+        <div className="page-heading">
+          <div>
+            <p className="page-eyebrow">HIDDENGEMS / SCOUTING</p>
+            <h1>Trova il tuo prossimo talento</h1>
+            <p>Filtra la rete per ruolo, esperienza e disponibilità.</p>
+          </div>
+        </div>
 
-        <form onSubmit={eseguiRicerca} className="card card--panel" style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
-          <div className="field">
-            <label className="field__label">Tipo</label>
-            <select value={tipoAccount} onChange={(e) => cambiaTipo(e.target.value)}>
-              <option value="giocatore">Giocatori</option>
-              <option value="allenatore">Allenatori</option>
-              <option value="scout">Scout</option>
-              <option value="societa">Società</option>
-            </select>
+        <form onSubmit={eseguiRicerca} className="search-form">
+          <div className="search-form__primary">
+            <div className="field search-form__type">
+              <label className="field__label" htmlFor="search-type">Cerco</label>
+              <select id="search-type" value={tipoAccount} onChange={(e) => cambiaTipo(e.target.value)}>
+                <option value="giocatore">Giocatori</option>
+                <option value="allenatore">Allenatori</option>
+                <option value="scout">Scout</option>
+                <option value="societa">Società</option>
+              </select>
+            </div>
+            <label className="search-form__query">
+              <span className="field__label">Nome o cognome</span>
+              <input type="search" placeholder="Es. Rossi, Milano…" value={testoRicerca} onChange={(e) => setTestoRicerca(e.target.value)} />
+            </label>
+            <button type="submit" disabled={cercando} className="search-submit">
+              {cercando ? 'Cerco…' : 'Cerca'}
+            </button>
           </div>
 
-          <input type="text" placeholder="Cerca per nome e cognome..." value={testoRicerca} onChange={(e) => setTestoRicerca(e.target.value)} />
+          <details className="search-filters">
+            <summary>
+              <span>Affina la ricerca</span>
+              {filtriAttivi > 0 && <span className="search-filters__count">{filtriAttivi} attivi</span>}
+            </summary>
+            <div className="search-filters__content">
 
           {tipoAccount === 'giocatore' && (
             <div className="subform">
@@ -198,29 +209,28 @@ export default function Cerca() {
             </div>
           )}
 
-          <button type="submit" disabled={cercando} className="btn btn--primary">
-            {cercando ? 'Ricerca in corso...' : 'Cerca'}
-          </button>
+            </div>
+          </details>
         </form>
 
         {risultati !== null && (
-          <div className="card-stack">
+          <section className="search-results" aria-live="polite">
+            <div className="search-results__heading">
+              <h2>Risultati</h2>
+              <span>{risultati.length} {risultati.length === 1 ? 'profilo trovato' : 'profili trovati'}</span>
+            </div>
             {risultati.length === 0 ? (
-              <p className="state-message">Nessun risultato con questi filtri.</p>
+              <div className="directory-empty">
+                <span className="directory-empty__mark" aria-hidden="true">?</span>
+                <h2>Nessun profilo trovato</h2>
+                <p>Prova a rimuovere un filtro o cerca con un altro nome.</p>
+              </div>
             ) : (
-              risultati.map((p) => (
-                <Link
-                  key={p.id}
-                  href={p.id === session.user.id ? '/profilo' : `/profilo/${p.id}`}
-                  className={`card card--clickable card--role-${p.tipo_account}`}
-                >
-                  <h4 style={{ marginBottom: 4 }}>{p.nome} {p.cognome}</h4>
-                  <span className={`badge badge--${p.tipo_account}`}>{p.tipo_account}</span>
-                  {infoAggiuntiva(p) && <p style={{ marginTop: 8, marginBottom: 0, fontSize: '0.88rem' }}>{infoAggiuntiva(p)}</p>}
-                </Link>
-              ))
+              <div className="talent-grid">
+                {risultati.map((profile) => <ProfileCard key={profile.id} profile={profile} currentUserId={session.user.id} />)}
+              </div>
             )}
-          </div>
+          </section>
         )}
       </div>
     </main>
