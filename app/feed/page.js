@@ -5,15 +5,41 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { supabase } from '../../lib/supabase';
 import AppHeader from '../../components/AppHeader';
-import { getFeed, metti_like, togli_like, getCommenti, aggiungiCommento } from '../../lib/feed';
+import { getFeed, metti_like, togli_like, getCommenti, aggiungiCommento, eliminaVideo } from '../../lib/feed';
 
-function PostCard({ post, sessionUserId }) {
+function IconLike({ active }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M7 10v10H4V10h3Zm3 10h7.2a2 2 0 0 0 1.96-1.61l1.2-6A2 2 0 0 0 18.4 10H14l.65-3.12A2.4 2.4 0 0 0 12.3 4L8 10v10Z" fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconComment() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H6l-3 2v-9.5A7.5 7.5 0 0 1 10.5 4h2A7.5 7.5 0 0 1 20 11.5Z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconDelete() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function PostCard({ post, sessionUserId, onDelete }) {
   const [miPiace, setMiPiace] = useState(post.miPiace);
   const [numeroLike, setNumeroLike] = useState(post.numeroLike);
   const [commentiAperti, setCommentiAperti] = useState(false);
   const [commenti, setCommenti] = useState([]);
   const [caricandoCommenti, setCaricandoCommenti] = useState(false);
   const [nuovoCommento, setNuovoCommento] = useState('');
+  const [eliminando, setEliminando] = useState(false);
+  const isAuthor = post.autore_id === sessionUserId;
 
   const toggleLike = async () => {
     try {
@@ -57,57 +83,81 @@ function PostCard({ post, sessionUserId }) {
     }
   };
 
+  const elimina = async () => {
+    if (!window.confirm('Vuoi eliminare definitivamente questo video?')) return;
+    setEliminando(true);
+    try {
+      await eliminaVideo(post.id);
+      onDelete(post.id);
+    } catch (err) {
+      window.alert('Errore eliminazione: ' + err.message);
+      setEliminando(false);
+    }
+  };
+
+  const createdAt = post.created_at ? new Date(post.created_at) : null;
+  const dataPubblicazione = createdAt && Number.isFinite(createdAt.getTime())
+    ? new Intl.DateTimeFormat('it-IT', { day: 'numeric', month: 'short', year: 'numeric' }).format(createdAt)
+    : null;
+
   return (
-    <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px' }}>
-        <Image src={post.autore?.foto_url || 'https://placehold.co/36x36?text=%20'} alt="" width={36} height={36} unoptimized className="avatar" style={{ width: 36, height: 36 }} />
-        <Link href={post.autore_id === sessionUserId ? '/profilo' : `/profilo/${post.autore_id}`} style={{ fontWeight: 600, textDecoration: 'none', color: 'inherit' }}>
-          {post.autore ? `${post.autore.nome} ${post.autore.cognome || ''}` : 'Giocatore'}
+    <article className={`feed-post${eliminando ? ' feed-post--deleting' : ''}`}>
+      <header className="feed-post__header">
+        <Link className="feed-post__author" href={isAuthor ? '/profilo' : `/profilo/${post.autore_id}`}>
+          <Image src={post.autore?.foto_url || 'https://placehold.co/44x44?text=%20'} alt="" width={44} height={44} unoptimized className="feed-post__avatar" />
+          <span className="feed-post__identity">
+            <strong>{post.autore ? `${post.autore.nome} ${post.autore.cognome || ''}` : 'Giocatore'}</strong>
+            <span>{dataPubblicazione || 'Video giocatore'}</span>
+          </span>
         </Link>
+        {isAuthor && (
+          <button type="button" className="feed-post__delete" onClick={elimina} disabled={eliminando} aria-label="Elimina il tuo video" title="Elimina video">
+            <IconDelete />
+            <span>{eliminando ? 'Eliminazione…' : 'Elimina'}</span>
+          </button>
+        )}
+      </header>
+
+      <div className="feed-post__video-wrap">
+        <video src={post.video_url} controls playsInline preload="none" className="feed-post__video" />
       </div>
 
-      <video
-        src={post.video_url}
-        controls
-        playsInline
-        preload="none"
-        style={{ width: '100%', maxHeight: 480, backgroundColor: '#000', display: 'block' }}
-      />
-
-      <div style={{ padding: '12px 14px' }}>
-        {post.didascalia && <p style={{ marginTop: 0 }}>{post.didascalia}</p>}
-        <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-          <button onClick={toggleLike} className="btn--ghost" style={{ fontWeight: 600 }}>
-            {miPiace ? '♥' : '♡'} {numeroLike}
+      <div className="feed-post__body">
+        {post.didascalia && <p className="feed-post__caption">{post.didascalia}</p>}
+        <div className="feed-post__actions">
+          <button type="button" onClick={toggleLike} className={`feed-post__action${miPiace ? ' is-active' : ''}`} aria-pressed={miPiace}>
+            <IconLike active={miPiace} />
+            <span>{numeroLike}</span>
           </button>
-          <button onClick={apriCommenti} className="btn--ghost" style={{ fontWeight: 600 }}>
-            💬 Commenti
+          <button type="button" onClick={apriCommenti} className={`feed-post__action${commentiAperti ? ' is-active' : ''}`} aria-expanded={commentiAperti}>
+            <IconComment />
+            <span>Commenti</span>
           </button>
         </div>
 
         {commentiAperti && (
-          <div style={{ marginTop: 12, borderTop: '1px solid var(--color-line)', paddingTop: 12 }}>
+          <div className="feed-comments">
             {caricandoCommenti ? (
-              <p className="state-message" style={{ padding: 10 }}>Caricamento...</p>
+              <p className="feed-comments__empty">Caricamento commenti…</p>
             ) : commenti.length === 0 ? (
-              <p style={{ color: 'var(--color-muted)', fontSize: '0.88rem' }}>Nessun commento ancora.</p>
+              <p className="feed-comments__empty">Nessun commento ancora. Inizia tu la conversazione.</p>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10 }}>
+              <div className="feed-comments__list">
                 {commenti.map((c) => (
-                  <p key={c.id} style={{ margin: 0, fontSize: '0.9rem' }}>
+                  <p key={c.id} className="feed-comments__item">
                     <strong>{c.autore ? `${c.autore.nome} ${c.autore.cognome || ''}` : 'Utente'}:</strong> {c.testo}
                   </p>
                 ))}
               </div>
             )}
-            <form onSubmit={invia} style={{ display: 'flex', gap: 8 }}>
+            <form onSubmit={invia} className="feed-comments__form">
               <input type="text" placeholder="Scrivi un commento..." value={nuovoCommento} onChange={(e) => setNuovoCommento(e.target.value)} />
-              <button type="submit" className="btn btn--sm btn--primary">Invia</button>
+              <button type="submit" className="btn btn--secondary btn--sm">Invia</button>
             </form>
           </div>
         )}
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -140,19 +190,28 @@ export default function Feed() {
   return (
     <main className="page">
       <AppHeader session={session} theme="feed" />
-      <div className="container">
-        <div className="section-title">
-          <h3>Feed</h3>
+      <div className="container container--wide feed-container">
+        <div className="feed-heading">
+          <div>
+            <p className="feed-heading__eyebrow">HIDDENGEMS / VIDEO</p>
+            <h1>Feed giocatori</h1>
+            <p className="feed-heading__subtitle">Azioni, tecnica e talento direttamente dal campo.</p>
+          </div>
           {tipoAccount === 'giocatore' && (
-            <Link href="/feed/carica" className="btn btn--primary btn--sm">+ Pubblica video</Link>
+            <Link href="/feed/carica" className="feed-heading__publish"><span aria-hidden="true">+</span> Pubblica video</Link>
           )}
         </div>
 
-        <div className="card-stack">
+        <div className="feed-list">
           {post.length === 0 ? (
-            <p className="state-message">Nessun video ancora nel feed.</p>
+            <div className="feed-empty">
+              <span className="feed-empty__mark" aria-hidden="true">HG</span>
+              <h2>Il campo è libero</h2>
+              <p>Non ci sono ancora video nel feed. I nuovi contenuti appariranno qui.</p>
+              {tipoAccount === 'giocatore' && <Link href="/feed/carica" className="feed-heading__publish">Pubblica il primo video</Link>}
+            </div>
           ) : (
-            post.map((p) => <PostCard key={p.id} post={p} sessionUserId={session.user.id} />)
+            post.map((p) => <PostCard key={p.id} post={p} sessionUserId={session.user.id} onDelete={(id) => setPost((current) => current.filter((item) => item.id !== id))} />)
           )}
         </div>
       </div>
