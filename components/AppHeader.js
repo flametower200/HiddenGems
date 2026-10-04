@@ -1,6 +1,26 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+
+const SECTION_PATHS = ['/', '/feed', '/cerca', '/messaggi', '/profilo', '/impostazioni'];
+
+function getSectionIndex(pathname) {
+  if (pathname === '/') return 0;
+  if (pathname.startsWith('/feed')) return 1;
+  if (pathname.startsWith('/cerca')) return 2;
+  if (pathname.startsWith('/messaggi')) return 3;
+  if (pathname.startsWith('/profilo')) return 4;
+  if (pathname.startsWith('/impostazioni')) return 5;
+  return -1;
+}
+
+function startsInProtectedControl(target) {
+  return target instanceof Element && Boolean(
+    target.closest('input, textarea, select, [contenteditable="true"], [data-horizontal-scroll]'),
+  );
+}
 
 function IconHome() {
   return (
@@ -69,6 +89,111 @@ const NAV_ITEMS = [
 ];
 
 export default function AppHeader({ session, theme = 'bacheca' }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const touchStart = useRef(null);
+  const lastNavigation = useRef(0);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    window.dispatchEvent(new CustomEvent('hiddengems:route-ready', { detail: { pathname } }));
+
+    const direction = root.dataset.sectionDirection;
+    if (!direction || typeof document.startViewTransition === 'function') return undefined;
+
+    const transitionClass = `section-swipe--${direction}`;
+    root.classList.add(transitionClass);
+    const timeout = window.setTimeout(() => {
+      root.classList.remove(transitionClass);
+      delete root.dataset.sectionDirection;
+    }, 560);
+
+    return () => window.clearTimeout(timeout);
+  }, [pathname]);
+
+  useEffect(() => {
+    const moveSection = (direction) => {
+      const now = Date.now();
+      const root = document.documentElement;
+      if (root.dataset.sectionDirection || now - lastNavigation.current < 600) return;
+
+      const currentIndex = getSectionIndex(pathname);
+      const target = SECTION_PATHS[currentIndex + direction];
+      if (!target) return;
+
+      lastNavigation.current = now;
+      const visualDirection = direction > 0 ? 'next' : 'previous';
+      root.dataset.sectionDirection = visualDirection;
+
+      if (typeof document.startViewTransition === 'function') {
+        const routeChanged = new Promise((resolve) => {
+          const onRouteReady = (event) => {
+            if (event.detail?.pathname !== target) return;
+            window.removeEventListener('hiddengems:route-ready', onRouteReady);
+            resolve();
+          };
+          window.addEventListener('hiddengems:route-ready', onRouteReady);
+          window.setTimeout(() => {
+            window.removeEventListener('hiddengems:route-ready', onRouteReady);
+            resolve();
+          }, 1800);
+        });
+        try {
+          const transition = document.startViewTransition(async () => {
+            router.push(target);
+            await routeChanged;
+          });
+          const clearDirection = () => { delete root.dataset.sectionDirection; };
+          transition.ready.catch(() => {});
+          transition.updateCallbackDone.catch(() => {});
+          transition.finished.then(clearDirection, clearDirection);
+        } catch {
+          delete root.dataset.sectionDirection;
+          router.push(target);
+        }
+      } else {
+        router.push(target);
+      }
+    };
+
+    const handleWheel = (event) => {
+      if (event.ctrlKey || Math.abs(event.deltaX) < 42 || Math.abs(event.deltaX) < Math.abs(event.deltaY) * 1.25) return;
+      if (startsInProtectedControl(event.target)) return;
+
+      event.preventDefault();
+      moveSection(event.deltaX > 0 ? 1 : -1);
+    };
+
+    const handleTouchStart = (event) => {
+      if (event.touches.length !== 1 || startsInProtectedControl(event.target)) {
+        touchStart.current = null;
+        return;
+      }
+      touchStart.current = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+    };
+
+    const handleTouchEnd = (event) => {
+      if (!touchStart.current || event.changedTouches.length !== 1) return;
+
+      const deltaX = event.changedTouches[0].clientX - touchStart.current.x;
+      const deltaY = event.changedTouches[0].clientY - touchStart.current.y;
+      touchStart.current = null;
+
+      if (Math.abs(deltaX) < 64 || Math.abs(deltaX) < Math.abs(deltaY) * 1.35) return;
+      moveSection(deltaX < 0 ? 1 : -1);
+    };
+
+    window.addEventListener('wheel', handleWheel, { passive: false });
+    window.addEventListener('touchstart', handleTouchStart, { passive: true });
+    window.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+    return () => {
+      window.removeEventListener('wheel', handleWheel);
+      window.removeEventListener('touchstart', handleTouchStart);
+      window.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [pathname, router]);
+
   return (
     <header className={`app-header app-header--${theme}`}>
       <div className="app-header__inner">
