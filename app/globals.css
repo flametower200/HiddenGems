@@ -85,6 +85,73 @@ a { color: var(--color-pitch-light); text-decoration: none; }
   min-height: 100vh;
 }
 
+.section-dragging .page {
+  position: relative;
+  z-index: 2;
+  transform: translateX(var(--section-drag-x, 0px));
+  transition: none;
+  will-change: transform;
+}
+
+.section-drag-settling .page,
+.section-drag-settling .section-drag-preview {
+  transition: transform 220ms cubic-bezier(0.2, 0.75, 0.25, 1);
+}
+
+.section-drag-preview {
+  position: fixed;
+  z-index: 1;
+  inset: 0 auto 0 0;
+  display: none;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  padding: 18px 20px;
+  color: #fff;
+  transform: translateX(calc(-100vw + var(--section-drag-x, 0px)));
+  will-change: transform;
+}
+
+.section-drag-preview.app-header--bacheca { background: linear-gradient(135deg, #0d3e31 0%, #155e45 100%); }
+.section-drag-preview.app-header--feed { background: linear-gradient(135deg, #d63a36 0%, #bf2b2b 100%); }
+.section-drag-preview.app-header--cerca { background: linear-gradient(135deg, #1d5cc7 0%, #123f99 100%); }
+.section-drag-preview.app-header--messaggi { background: linear-gradient(135deg, #6a3bd8 0%, #4521a2 100%); }
+.section-drag-preview.app-header--profilo { background: linear-gradient(135deg, #b77828 0%, #7e5213 100%); }
+.section-drag-preview.app-header--impostazioni { background: linear-gradient(135deg, #2c2f36 0%, #161a20 100%); }
+
+.section-dragging .section-drag-preview,
+.section-drag-settling .section-drag-preview {
+  display: block;
+}
+
+.section-dragging[data-section-direction="next"] .section-drag-preview,
+.section-drag-settling[data-section-direction="next"] .section-drag-preview {
+  transform: translateX(calc(100vw + var(--section-drag-x, 0px)));
+}
+
+.section-drag-preview__brand {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.section-drag-preview__content {
+  display: grid;
+  min-height: 70vh;
+  place-content: center;
+  justify-items: center;
+  gap: 14px;
+  font-family: var(--font-display);
+  font-size: 2rem;
+}
+
+.section-drag-preview__icon,
+.section-drag-preview__icon svg {
+  display: block;
+  width: 54px;
+  height: 54px;
+}
+
 .section-swipe--next .page {
   animation: section-arrive-from-right 520ms cubic-bezier(0.22, 0.7, 0.2, 1) both;
 }
@@ -515,6 +582,10 @@ textarea { resize: vertical; font-family: var(--font-body); }
 .action-row { display: flex; gap: 10px; margin: 16px 0; flex-wrap: wrap; }
 
 @media (max-width: 640px) {
+  .section-drag-preview {
+    display: block;
+  }
+
   .app-header__nav {
     width: 100%;
     justify-content: center;

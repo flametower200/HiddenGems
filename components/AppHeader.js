@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { createPortal } from 'react-dom';
 
 const SECTION_PATHS = ['/', '/feed', '/cerca', '/messaggi', '/profilo', '/impostazioni'];
 
@@ -80,12 +81,12 @@ function IconSettings() {
 }
 
 const NAV_ITEMS = [
-  { href: '/', label: 'Bacheca', icon: <IconHome />, title: 'Bacheca' },
-  { href: '/feed', label: 'Feed', icon: <IconFeed />, title: 'Feed' },
-  { href: '/cerca', label: 'Cerca', icon: <IconSearch />, title: 'Cerca' },
-  { href: '/messaggi', label: 'Messaggi', icon: <IconMessages />, title: 'Messaggi' },
-  { href: '/profilo', label: 'Profilo', icon: <IconProfile />, title: 'Profilo' },
-  { href: '/impostazioni', label: 'Impostazioni', icon: <IconSettings />, title: 'Impostazioni' },
+  { href: '/', label: 'Bacheca', icon: <IconHome />, title: 'Bacheca', theme: 'bacheca' },
+  { href: '/feed', label: 'Feed', icon: <IconFeed />, title: 'Feed', theme: 'feed' },
+  { href: '/cerca', label: 'Cerca', icon: <IconSearch />, title: 'Cerca', theme: 'cerca' },
+  { href: '/messaggi', label: 'Messaggi', icon: <IconMessages />, title: 'Messaggi', theme: 'messaggi' },
+  { href: '/profilo', label: 'Profilo', icon: <IconProfile />, title: 'Profilo', theme: 'profilo' },
+  { href: '/impostazioni', label: 'Impostazioni', icon: <IconSettings />, title: 'Impostazioni', theme: 'impostazioni' },
 ];
 
 export default function AppHeader({ session, theme = 'bacheca' }) {
@@ -93,6 +94,7 @@ export default function AppHeader({ session, theme = 'bacheca' }) {
   const pathname = usePathname();
   const touchStart = useRef(null);
   const lastNavigation = useRef(0);
+  const [previewSection, setPreviewSection] = useState(null);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -115,7 +117,8 @@ export default function AppHeader({ session, theme = 'bacheca' }) {
     const moveSection = (direction) => {
       const now = Date.now();
       const root = document.documentElement;
-      if (root.dataset.sectionDirection || now - lastNavigation.current < 600) return;
+      const isDragging = root.classList.contains('section-dragging');
+      if ((root.dataset.sectionDirection && !isDragging) || now - lastNavigation.current < 600) return;
 
       const currentIndex = getSectionIndex(pathname);
       const target = SECTION_PATHS[currentIndex + direction];
@@ -142,16 +145,25 @@ export default function AppHeader({ session, theme = 'bacheca' }) {
           const transition = document.startViewTransition(async () => {
             router.push(target);
             await routeChanged;
+            root.classList.remove('section-dragging', 'section-drag-settling');
+            root.style.removeProperty('--section-drag-x');
           });
           const clearDirection = () => { delete root.dataset.sectionDirection; };
           transition.ready.catch(() => {});
           transition.updateCallbackDone.catch(() => {});
-          transition.finished.then(clearDirection, clearDirection);
+          const finishTransition = () => {
+            clearDirection();
+            root.classList.remove('section-dragging', 'section-drag-settling');
+            root.style.removeProperty('--section-drag-x');
+          };
+          transition.finished.then(finishTransition, finishTransition);
         } catch {
           delete root.dataset.sectionDirection;
           router.push(target);
         }
       } else {
+        root.classList.remove('section-dragging', 'section-drag-settling');
+        root.style.removeProperty('--section-drag-x');
         router.push(target);
       }
     };
@@ -169,28 +181,89 @@ export default function AppHeader({ session, theme = 'bacheca' }) {
         touchStart.current = null;
         return;
       }
-      touchStart.current = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+      touchStart.current = {
+        x: event.touches[0].clientX,
+        y: event.touches[0].clientY,
+        startedAt: Date.now(),
+        direction: 0,
+      };
+    };
+
+    const settleTouch = (commit) => {
+      const gesture = touchStart.current;
+      touchStart.current = null;
+      if (!gesture?.direction) return;
+
+      const root = document.documentElement;
+      if (commit) {
+        moveSection(gesture.direction);
+        return;
+      }
+
+      root.classList.remove('section-dragging');
+      root.classList.add('section-drag-settling');
+      root.style.setProperty('--section-drag-x', '0px');
+      window.setTimeout(() => {
+        root.classList.remove('section-drag-settling');
+        root.style.removeProperty('--section-drag-x');
+        delete root.dataset.sectionDirection;
+        setPreviewSection(null);
+      }, 240);
+    };
+
+    const handleTouchMove = (event) => {
+      if (!touchStart.current || event.touches.length !== 1) return;
+
+      const touch = event.touches[0];
+      const deltaX = touch.clientX - touchStart.current.x;
+      const deltaY = touch.clientY - touchStart.current.y;
+      if (!touchStart.current.direction && Math.max(Math.abs(deltaX), Math.abs(deltaY)) < 8) return;
+      if (!touchStart.current.direction && Math.abs(deltaX) < Math.abs(deltaY) * 1.1) {
+        touchStart.current = null;
+        return;
+      }
+
+      const direction = deltaX < 0 ? 1 : -1;
+      const nextItem = NAV_ITEMS[getSectionIndex(pathname) + direction];
+      if (!nextItem) {
+        settleTouch(false);
+        return;
+      }
+
+      touchStart.current.direction = direction;
+      const root = document.documentElement;
+      root.classList.add('section-dragging');
+      root.classList.remove('section-drag-settling');
+      root.dataset.sectionDirection = direction > 0 ? 'next' : 'previous';
+      root.style.setProperty('--section-drag-x', `${deltaX}px`);
+      setPreviewSection(nextItem);
+      event.preventDefault();
     };
 
     const handleTouchEnd = (event) => {
       if (!touchStart.current || event.changedTouches.length !== 1) return;
 
       const deltaX = event.changedTouches[0].clientX - touchStart.current.x;
-      const deltaY = event.changedTouches[0].clientY - touchStart.current.y;
-      touchStart.current = null;
-
-      if (Math.abs(deltaX) < 64 || Math.abs(deltaX) < Math.abs(deltaY) * 1.35) return;
-      moveSection(deltaX < 0 ? 1 : -1);
+      const elapsed = Date.now() - touchStart.current.startedAt;
+      const commitDistance = Math.max(56, window.innerWidth * 0.18);
+      const shouldCommit = Math.abs(deltaX) >= commitDistance || (Math.abs(deltaX) >= 32 && elapsed < 220);
+      settleTouch(shouldCommit);
     };
 
+    const handleTouchCancel = () => settleTouch(false);
+
     window.addEventListener('wheel', handleWheel, { passive: false });
-    window.addEventListener('touchstart', handleTouchStart, { passive: true });
-    window.addEventListener('touchend', handleTouchEnd, { passive: true });
+    window.addEventListener('touchstart', handleTouchStart, { passive: true, capture: true });
+    window.addEventListener('touchmove', handleTouchMove, { passive: false, capture: true });
+    window.addEventListener('touchend', handleTouchEnd, { passive: true, capture: true });
+    window.addEventListener('touchcancel', handleTouchCancel, { passive: true, capture: true });
 
     return () => {
       window.removeEventListener('wheel', handleWheel);
-      window.removeEventListener('touchstart', handleTouchStart);
-      window.removeEventListener('touchend', handleTouchEnd);
+      window.removeEventListener('touchstart', handleTouchStart, true);
+      window.removeEventListener('touchmove', handleTouchMove, true);
+      window.removeEventListener('touchend', handleTouchEnd, true);
+      window.removeEventListener('touchcancel', handleTouchCancel, true);
     };
   }, [pathname, router]);
 
@@ -215,6 +288,16 @@ export default function AppHeader({ session, theme = 'bacheca' }) {
           ))}
         </nav>
       </div>
+      {previewSection && typeof document !== 'undefined' && createPortal(
+        <div className={`section-drag-preview app-header--${previewSection.theme}`} aria-hidden="true">
+          <div className="section-drag-preview__brand">HiddenGems</div>
+          <div className="section-drag-preview__content">
+            <span className="section-drag-preview__icon">{previewSection.icon}</span>
+            <strong>{previewSection.label}</strong>
+          </div>
+        </div>,
+        document.body,
+      )}
     </header>
   );
 }
