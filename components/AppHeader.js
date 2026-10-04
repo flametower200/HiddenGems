@@ -13,6 +13,7 @@ export default function AppHeader({ session }) {
         </div>
         <nav className="app-header__nav">
           <Link href="/" className="nav-link">Bacheca</Link>
+          <Link href="/feed" className="nav-link">Feed</Link>
           <Link href="/cerca" className="nav-link">Cerca</Link>
           <Link href="/messaggi" className="nav-link">Messaggi</Link>
           <Link href="/profilo" className="nav-link">Il mio profilo</Link>
