@@ -157,83 +157,7 @@ export default function Home() {
   if (!session) {
     return (
       <main className="page auth-shell">
-        <div className="showcase-wrap">
-          <div className="phone-stack phone-stack--left">
-            <div className="phone-shell phone-shell--profile">
-              <div className="phone-topbar">
-                <span>5:26</span>
-                <span>📶</span>
-              </div>
-
-              <div className="profile-headline">
-                <span className="profile-handle">ted_ghraham321</span>
-                <span className="mini-icon">＋</span>
-                <span className="mini-icon">☰</span>
-              </div>
-
-              <div className="profile-meta">
-                <div className="avatar avatar--large" />
-                <div className="stat-list">
-                  <div><strong>84</strong><span>posts</span></div>
-                  <div><strong>1,134</strong><span>followers</span></div>
-                  <div><strong>513</strong><span>following</span></div>
-                </div>
-              </div>
-
-              <div className="profile-bio">
-                <p>Here for a good time</p>
-                <p className="profile-link">@ted_ghram321</p>
-              </div>
-
-              <div className="profile-actions">
-                <button type="button">Edit profile</button>
-                <button type="button">Share profile</button>
-                <button type="button">⋯</button>
-              </div>
-
-              <div className="photo-grid">
-                <div className="photo photo--sunset" />
-                <div className="photo photo--portrait" />
-                <div className="photo photo--field" />
-                <div className="photo photo--soccer" />
-                <div className="photo photo--grass" />
-                <div className="photo photo--goal" />
-              </div>
-            </div>
-          </div>
-
-          <div className="phone-stack phone-stack--right">
-            <div className="phone-shell phone-shell--feed">
-              <div className="phone-topbar">
-                <span>5:26</span>
-                <span>📶</span>
-              </div>
-
-              <div className="feed-header">
-                <span className="feed-logo">HiddenGems</span>
-                <span className="mini-icon">♡</span>
-              </div>
-
-              <div className="story-row">
-                <div className="story story--main" />
-                <div className="story story--two" />
-                <div className="story story--three" />
-                <div className="story story--four" />
-              </div>
-
-              <div className="feed-post">
-                <div className="feed-post__media" />
-                <div className="feed-post__meta">
-                  <span>♡ 1.2K</span>
-                  <span>💬 57</span>
-                  <span>↻ 24</span>
-                  <span>✉ 6</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="auth-card">
+        <div className="auth-card">
             <div className="auth-brand">
               <span className="brand-badge">HG</span>
               <h1>HiddenGems</h1>
@@ -338,7 +262,6 @@ export default function Home() {
                 {mode === 'login' ? 'Accedi' : 'Crea account'}
               </button>
             </form>
-          </div>
         </div>
       </main>
     );
