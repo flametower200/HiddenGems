@@ -193,10 +193,6 @@ export default function Home() {
                 </button>
                 <a className="landing-secondary-cta" href="#come-funziona">Scopri come funziona</a>
               </div>
-              <div className="landing-proof">
-                <span className="landing-proof__mark" aria-hidden="true">01</span>
-                <p><strong>Più visibilità.</strong> Meno distanze. Relazioni più dirette.</p>
-              </div>
             </div>
 
             <div className="landing-hero__visual" aria-hidden="true">
