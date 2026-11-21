@@ -39,6 +39,12 @@ begin
   if v_tipo not in ('giocatore','allenatore','scout','societa') then
     raise exception 'tipo_account non valido: %', v_tipo;
   end if;
+  if v_nome is null or length(btrim(v_nome)) = 0 or length(v_nome) > 100 then
+    raise exception 'nome profilo non valido';
+  end if;
+  if v_tipo <> 'societa' and (v_cognome is null or length(btrim(v_cognome)) = 0 or length(v_cognome) > 100) then
+    raise exception 'cognome profilo non valido';
+  end if;
 
   insert into public.profiles (id, email, tipo_account, nome, cognome, genere)
   values (

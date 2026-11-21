@@ -13,13 +13,17 @@ export default function CaricaVideo() {
   const [tipoAccount, setTipoAccount] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const [file, setFile] = useState(null);
   const [didascalia, setDidascalia] = useState('');
   const [fase, setFase] = useState('scegli'); // scegli | comprimendo | pronto | pubblicando
   const [progresso, setProgresso] = useState(0);
   const [anteprima, setAnteprima] = useState(null);
   const [risultatoCompressione, setRisultatoCompressione] = useState(null);
   const [errore, setErrore] = useState('');
+
+  useEffect(() => {
+    if (!anteprima) return undefined;
+    return () => URL.revokeObjectURL(anteprima);
+  }, [anteprima]);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -36,7 +40,16 @@ export default function CaricaVideo() {
     const f = e.target.files?.[0];
     if (!f) return;
     setErrore('');
-    setFile(f);
+    if (f.size > 100 * 1024 * 1024) {
+      setErrore('Il video originale deve pesare meno di 100 MB.');
+      e.target.value = '';
+      return;
+    }
+    if (f.type && !f.type.startsWith('video/')) {
+      setErrore('Seleziona un file video valido.');
+      e.target.value = '';
+      return;
+    }
     setFase('comprimendo');
     setProgresso(0);
     try {
@@ -86,8 +99,8 @@ export default function CaricaVideo() {
       <div className="container">
         <h3>Pubblica un video</h3>
         <p style={{ color: 'var(--color-muted)', fontSize: '0.9rem' }}>
-          Il video viene compresso automaticamente in 480p direttamente nel tuo browser (nessun dato lascia il
-          dispositivo finché non clicchi "Pubblica"). Se dura più di 30 secondi, verranno tenuti solo i primi 30.
+          Il video viene convertito in verticale 9:16 e compresso direttamente nel tuo browser. Nessun dato lascia il
+          dispositivo finché non clicchi &quot;Pubblica&quot;. Se dura più di 30 secondi, verranno tenuti solo i primi 30.
         </p>
 
         {errore && (
@@ -99,7 +112,7 @@ export default function CaricaVideo() {
         {fase === 'scegli' && (
           <label className="btn btn--primary" style={{ cursor: 'pointer' }}>
             Scegli un video
-            <input type="file" accept="video/*" onChange={scegliFile} style={{ display: 'none' }} />
+            <input type="file" accept="video/*" capture="environment" onChange={scegliFile} style={{ display: 'none' }} />
           </label>
         )}
 
@@ -114,7 +127,9 @@ export default function CaricaVideo() {
 
         {(fase === 'pronto' || fase === 'pubblicando') && anteprima && (
           <div className="card card--panel" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <video src={anteprima} controls style={{ width: '100%', maxHeight: 400, background: '#000' }} />
+            <div className="upload-video-frame">
+              <video src={anteprima} controls playsInline className="upload-video-frame__video" />
+            </div>
             {risultatoCompressione?.tagliato && (
               <p style={{ fontSize: '0.85rem', color: 'var(--color-muted)' }}>
                 Il video originale durava più di 30 secondi: sono stati tenuti solo i primi 30.
@@ -128,7 +143,7 @@ export default function CaricaVideo() {
               <button onClick={pubblica} disabled={fase === 'pubblicando'} className="btn btn--primary">
                 {fase === 'pubblicando' ? 'Pubblicazione...' : 'Pubblica'}
               </button>
-              <button onClick={() => { setFase('scegli'); setFile(null); setAnteprima(null); setRisultatoCompressione(null); }} disabled={fase === 'pubblicando'} className="btn btn--outline">
+              <button onClick={() => { setFase('scegli'); setAnteprima(null); setRisultatoCompressione(null); setDidascalia(''); }} disabled={fase === 'pubblicando'} className="btn btn--outline">
                 Scegli un altro video
               </button>
             </div>

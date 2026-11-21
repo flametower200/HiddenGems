@@ -24,6 +24,11 @@ const PIEDI = [
   { value: 'sinistro', label: 'Sinistro' },
   { value: 'ambidestro', label: 'Ambidestro' },
 ];
+const AVATAR_FORMATS = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+};
 
 export default function MioProfilo() {
   const [session, setSession] = useState(null);
@@ -117,12 +122,18 @@ export default function MioProfilo() {
       alert('Immagine troppo grande: massimo 3MB.');
       return;
     }
+    if (!AVATAR_FORMATS[file.type]) {
+      alert('Formato non supportato. Scegli un’immagine JPEG, PNG o WebP.');
+      e.target.value = '';
+      return;
+    }
     setCaricandoFoto(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      const estensione = file.name.split('.').pop();
+      if (!user) throw new Error('Devi effettuare nuovamente l’accesso.');
+      const estensione = AVATAR_FORMATS[file.type];
       const percorso = `${user.id}/avatar-${Date.now()}.${estensione}`;
-      const { error: errUpload } = await supabase.storage.from('avatars').upload(percorso, file, { upsert: true });
+      const { error: errUpload } = await supabase.storage.from('avatars').upload(percorso, file, { upsert: true, contentType: file.type });
       if (errUpload) throw errUpload;
       const { data: pubblico } = supabase.storage.from('avatars').getPublicUrl(percorso);
       setFotoUrl(pubblico.publicUrl);
@@ -135,6 +146,11 @@ export default function MioProfilo() {
   const salva = async () => {
     setSalvataggio(true);
     const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setSalvataggio(false);
+      alert('Devi effettuare nuovamente l\'accesso.');
+      return;
+    }
 
     const { error: errProfilo } = await supabase
       .from('profiles')
@@ -269,7 +285,7 @@ export default function MioProfilo() {
                 <UserAvatar src={fotoUrl} name={`${profilo.nome} ${profilo.cognome || ''}`} size={56} className="avatar" />
                 <label className="btn btn--outline btn--sm" style={{ cursor: 'pointer' }}>
                   {caricandoFoto ? 'Caricamento...' : 'Scegli immagine'}
-                  <input type="file" accept="image/*" onChange={handleCaricaFoto} disabled={caricandoFoto} style={{ display: 'none' }} />
+                  <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleCaricaFoto} disabled={caricandoFoto} style={{ display: 'none' }} />
                 </label>
               </div>
             </div>

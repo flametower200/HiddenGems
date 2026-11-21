@@ -42,6 +42,8 @@ function PostCard({ post, sessionUserId, onDelete }) {
   const isAuthor = post.autore_id === sessionUserId;
 
   const toggleLike = async () => {
+    const previousMiPiace = miPiace;
+    const previousNumeroLike = numeroLike;
     try {
       if (miPiace) {
         setMiPiace(false);
@@ -53,6 +55,8 @@ function PostCard({ post, sessionUserId, onDelete }) {
         await metti_like(post.id);
       }
     } catch (err) {
+      setMiPiace(previousMiPiace);
+      setNumeroLike(previousNumeroLike);
       alert('Errore: ' + err.message);
     }
   };
@@ -66,8 +70,9 @@ function PostCard({ post, sessionUserId, onDelete }) {
         setCommenti(await getCommenti(post.id));
       } catch (err) {
         console.error('Errore caricamento commenti:', err.message);
+      } finally {
+        setCaricandoCommenti(false);
       }
-      setCaricandoCommenti(false);
     }
   };
 
@@ -151,7 +156,7 @@ function PostCard({ post, sessionUserId, onDelete }) {
               </div>
             )}
             <form onSubmit={invia} className="feed-comments__form">
-              <input type="text" placeholder="Scrivi un commento..." value={nuovoCommento} onChange={(e) => setNuovoCommento(e.target.value)} />
+              <input type="text" maxLength={500} placeholder="Scrivi un commento..." value={nuovoCommento} onChange={(e) => setNuovoCommento(e.target.value)} />
               <button type="submit" className="btn btn--secondary btn--sm">Invia</button>
             </form>
           </div>

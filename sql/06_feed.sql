@@ -45,6 +45,32 @@ create trigger trg_feed_posts_autore_giocatore
   before insert on public.feed_posts
   for each row execute function public.check_autore_giocatore();
 
+drop trigger if exists trg_feed_posts_storage_validation on public.feed_posts;
+create or replace function public.check_feed_post_storage()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if new.autore_id is null
+    or new.storage_key is null
+    or new.storage_key not like ('hiddengems-feed/giocatore-' || new.autore_id::text || '/%')
+  then
+    raise exception 'storage_key del video non valido';
+  end if;
+  if new.video_url is null
+    or new.video_url !~ '^https://res\.cloudinary\.com/'
+  then
+    raise exception 'video_url non valido';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger trg_feed_posts_storage_validation
+  before insert or update of autore_id, storage_key, video_url on public.feed_posts
+  for each row execute function public.check_feed_post_storage();
+
 
 create table public.feed_likes (
   post_id    uuid not null references public.feed_posts(id) on delete cascade,
