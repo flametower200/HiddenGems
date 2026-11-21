@@ -190,7 +190,7 @@ export default function ProfiloPubblico() {
               ...(profilo.tipo_account === 'giocatore' && dettaglio ? [
                 { label: 'Ruolo', value: [dettaglio.ruolo_principale, dettaglio.ruolo_secondario].filter(Boolean).join(' / ') || '—' },
                 { label: 'Piede preferito', value: dettaglio.piede || '—', icon: 'foot' },
-                { label: 'Altezza / peso', value: `${dettaglio.altezza || '—'} cm / ${dettaglio.peso || '—'} kg` },
+                { label: 'Altezza / peso', value: [dettaglio.altezza && `${dettaglio.altezza} cm`, dettaglio.peso && `${dettaglio.peso} kg`].filter(Boolean).join(' / ') || '—' },
                 { label: 'Disponibilità', value: dettaglio.in_cerca_squadra ? 'In cerca di squadra' : 'Non disponibile', available: !!dettaglio.in_cerca_squadra },
               ] : []),
               ...(profilo.tipo_account === 'allenatore' && dettaglio ? [

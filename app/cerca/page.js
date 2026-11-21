@@ -129,8 +129,11 @@ export default function Cerca() {
 
           <details className="search-filters">
             <summary>
-              <span>Affina la ricerca</span>
+              <span>Filtri avanzati</span>
               {filtriAttivi > 0 && <span className="search-filters__count">{filtriAttivi} attivi</span>}
+              <svg className="search-filters__chevron" viewBox="0 0 20 20" aria-hidden="true">
+                <path d="m5 7.5 5 5 5-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </summary>
             <div className="search-filters__content">
 

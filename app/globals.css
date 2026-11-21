@@ -1798,6 +1798,223 @@ select { padding-right: 40px; }
     box-shadow: var(--shadow-card);
   }
 
+  h1,
+  h2 { letter-spacing: -0.03em; line-height: 1.15; }
+
+  .app-header {
+    display: flex;
+    height: 68px;
+    align-items: center;
+    padding: 0;
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+  }
+
+  .app-header__inner {
+    width: 100%;
+    min-height: 68px;
+  }
+
+  .app-header__brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 1.2rem;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+  }
+
+  .app-header__brand svg,
+  .section-drag-preview__brand svg {
+    display: block;
+    width: 26px;
+    height: 26px;
+    flex: 0 0 auto;
+  }
+
+  .section-drag-preview__brand {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    letter-spacing: -0.04em;
+  }
+
+  .nav-link {
+    min-height: 38px;
+    height: auto;
+    padding: 7px 14px;
+    border-radius: 9999px;
+    transition: color 150ms cubic-bezier(0.16, 1, 0.3, 1), background 150ms cubic-bezier(0.16, 1, 0.3, 1), transform 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .nav-link__icon,
+  .nav-link__icon svg {
+    width: 20px;
+    height: 20px;
+    shape-rendering: geometricPrecision;
+  }
+
+  .nav-link.is-active { padding: 7px 14px; }
+  .app-header__publish { transition: transform 150ms cubic-bezier(0.16, 1, 0.3, 1), background 150ms cubic-bezier(0.16, 1, 0.3, 1); }
+  .app-header__publish:active,
+  .btn--primary:active,
+  .search-submit:active { transform: scale(0.98); }
+
+  .feed-heading,
+  .feed-list,
+  .search-screen > .page-heading,
+  .search-screen > .search-form,
+  .search-screen > .search-results {
+    width: 100%;
+    max-width: 1100px;
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  .profile-stat-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .profile-stat-tile {
+    min-height: 0;
+    gap: 6px;
+    padding: 14px 18px;
+    border-radius: 12px;
+    transition: border-color 150ms cubic-bezier(0.16, 1, 0.3, 1), background 150ms cubic-bezier(0.16, 1, 0.3, 1), transform 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .profile-stat-tile__label {
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .profile-stat-tile__value,
+  .stat-chip__value {
+    font-size: 15px;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+
+  .stat-chip__value { font-size: 1.25rem; }
+  .profile-stat-tile:hover,
+  .talent-card:hover,
+  .message-conversation:hover,
+  .feed-post:hover {
+    border-color: #cbd5e1;
+  }
+
+  .profile-head h1,
+  .profile-overview .profile-head h1 { letter-spacing: -0.03em; }
+  .profile-stat-grid,
+  .stat-row,
+  input[type="number"] { font-variant-numeric: tabular-nums; }
+
+  .profile-avatar-upload {
+    position: relative;
+    display: inline-flex;
+    flex: 0 0 auto;
+    cursor: pointer;
+  }
+
+  .profile-avatar-upload .user-avatar {
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px rgba(22, 48, 34, 0.1);
+    transition: filter 150ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .profile-avatar-upload__badge {
+    position: absolute;
+    right: -2px;
+    bottom: -2px;
+    display: grid;
+    width: 30px;
+    height: 30px;
+    place-items: center;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    background: var(--color-pitch);
+    color: #fff;
+    opacity: 0;
+    transform: translateY(3px);
+    transition: opacity 150ms cubic-bezier(0.16, 1, 0.3, 1), transform 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .profile-avatar-upload__badge svg { width: 18px; height: 18px; }
+  .profile-avatar-upload:hover .user-avatar,
+  .profile-avatar-upload:focus-within .user-avatar { filter: brightness(0.88); }
+  .profile-avatar-upload:hover .profile-avatar-upload__badge,
+  .profile-avatar-upload:focus-within .profile-avatar-upload__badge { opacity: 1; transform: translateY(0); }
+
+  .search-form__primary { min-height: 56px; }
+  .search-form__type,
+  .search-form__query { padding-top: 6px; padding-bottom: 6px; }
+  .search-submit { margin-right: 8px; }
+  .search-filters > summary::after { content: none; }
+  .search-filters__chevron {
+    width: 18px;
+    height: 18px;
+    margin-left: auto;
+    color: var(--color-muted);
+    transition: transform 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .search-filters[open] .search-filters__chevron { transform: rotate(180deg); }
+  .search-filters__count { margin-left: 2px; }
+
+  .message-tabs {
+    width: fit-content;
+    max-width: 100%;
+    background: #f8fafc;
+  }
+
+  .message-tabs .tab { flex: 0 0 auto; padding: 8px 12px; }
+  .message-tabs .tab.is-active { border: 1px solid #e2e8f0; box-shadow: none; }
+  .message-tabs__count {
+    display: inline-grid;
+    min-width: 22px;
+    height: 22px;
+    margin-left: 6px;
+    place-items: center;
+    border-radius: 9999px;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 0.72rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .btn,
+  .search-submit,
+  .talent-card,
+  .message-conversation,
+  .feed-post,
+  .profile-stat-tile,
+  .app-header__publish {
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .card--clickable:hover,
+  .talent-card:hover,
+  .message-conversation:hover,
+  .feed-post:hover,
+  .profile-stat-tile:hover {
+    border-color: #cbd5e1;
+  }
+
+  @media (max-width: 900px) {
+    .profile-stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
+
+  @media (max-width: 640px) {
+    .app-header { display: block; height: auto; padding: 0; }
+    .app-header__inner { min-height: 0; }
+    .profile-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .profile-stat-tile { padding: 12px 14px; }
+    .profile-avatar-upload__badge { width: 28px; height: 28px; opacity: 1; transform: none; }
+    .search-form__primary { min-height: 0; }
+    .message-tabs { width: fit-content; }
+  }
+
   .danger-zone {
     border-color: var(--color-danger);
     border-radius: 16px;

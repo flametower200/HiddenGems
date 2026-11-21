@@ -185,6 +185,7 @@ export default function MioProfilo() {
       return;
     }
     setCaricandoFoto(true);
+    setModifica(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Devi effettuare nuovamente l’accesso.');
@@ -348,7 +349,16 @@ export default function MioProfilo() {
       <div className="container profile-screen__container">
         <section className="profile-overview">
           <div className="profile-head">
-            <UserAvatar src={fotoUrl} name={`${profilo.nome} ${profilo.cognome || ''}`} size={88} className="avatar" />
+            <label className="profile-avatar-upload" title="Carica o modifica la foto profilo">
+              <UserAvatar src={fotoUrl} name={`${profilo.nome} ${profilo.cognome || ''}`} size={88} className="avatar" />
+              <span className="profile-avatar-upload__badge" aria-hidden="true">
+                <svg viewBox="0 0 20 20">
+                  <path d="M3 6.5h3l1.5-2h5l1.5 2h3v9H3v-9Z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+                  <circle cx="10" cy="10.5" r="2.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                </svg>
+              </span>
+              <input className="visually-hidden" type="file" accept="image/jpeg,image/png,image/webp" onChange={handleCaricaFoto} aria-label="Carica una foto profilo" />
+            </label>
             {squadraAttuale && (
               <UserAvatar src={squadraAttuale.foto_url} name={squadraAttuale.nome} size={48} className="avatar" />
             )}
@@ -382,7 +392,7 @@ export default function MioProfilo() {
                   ...(profilo.tipo_account === 'giocatore' && dettaglio ? [
                     { label: 'Ruolo', value: [dettaglio.ruolo_principale, dettaglio.ruolo_secondario].filter(Boolean).join(' / ') || '—' },
                     { label: 'Piede preferito', value: dettaglio.piede || '—', icon: 'foot' },
-                    { label: 'Altezza / peso', value: `${dettaglio.altezza || '—'} cm / ${dettaglio.peso || '—'} kg` },
+                    { label: 'Altezza / peso', value: [dettaglio.altezza && `${dettaglio.altezza} cm`, dettaglio.peso && `${dettaglio.peso} kg`].filter(Boolean).join(' / ') || '—' },
                     { label: 'Disponibilità', value: dettaglio.in_cerca_squadra ? 'In cerca di squadra' : 'Non disponibile', available: !!dettaglio.in_cerca_squadra },
                     { label: 'Stato contrattuale', value: CONTRACT_STATUS_OPTIONS.find((option) => option.value === canonicalContractStatus(dettaglio.stato_contratto))?.label || dettaglio.stato_contratto || '—' },
                   ] : []),
@@ -565,7 +575,7 @@ export default function MioProfilo() {
               <button onClick={salva} disabled={salvataggio} className="btn btn--primary">
                 {salvataggio ? 'Salvataggio...' : 'Salva'}
               </button>
-              <button onClick={() => setModifica(false)} className="btn btn--outline">Annulla</button>
+              <button onClick={() => { setFotoUrl(profilo.foto_url || ''); setModifica(false); }} className="btn btn--outline">Annulla</button>
             </div>
           </div>
         )}

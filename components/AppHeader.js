@@ -64,8 +64,18 @@ function IconProfile() {
 function IconSettings() {
   return (
     <svg viewBox="0 0 64 64" aria-hidden="true">
-      <circle cx="32" cy="32" r="9" fill="none" stroke="currentColor" strokeWidth="4" />
-      <path d="M32 10V16M32 48V54M54 32H48M16 32H10M47 17L42 22M22 42L17 47M47 47L42 42M22 22L17 17" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+      <path d="M26 8h12l2 7 6 3 6-3 6 10-5 5v6l5 5-6 10-7-2-5 3-2 7H26l-2-7-6-3-6 2-6-10 5-5v-6l-5-5 6-10 7 3 5-3 2-7Z" fill="none" stroke="currentColor" strokeWidth="3" strokeLinejoin="round" />
+      <circle cx="32" cy="33" r="8" fill="none" stroke="currentColor" strokeWidth="3" />
+    </svg>
+  );
+}
+
+function BrandMark() {
+  return (
+    <svg viewBox="0 0 32 32" aria-hidden="true">
+      <path d="M16 2 30 16 16 30 2 16 16 2Z" fill="none" stroke="currentColor" strokeWidth="2" />
+      <path d="M16 7 25 16 16 25 7 16 16 7Z" fill="currentColor" />
+      <path d="M16 7v18M7 16h18" stroke="#163022" strokeWidth="1.5" />
     </svg>
   );
 }
@@ -269,7 +279,7 @@ export default function AppHeader({ session, theme = 'bacheca' }) {
     <header className={`app-header app-header--${theme}`}>
       <div className="app-header__inner">
         <div className="app-header__identity">
-          <p className="app-header__brand">HiddenGems</p>
+          <p className="app-header__brand"><BrandMark /> <span>HiddenGems</span></p>
         </div>
 
         <nav className="app-header__nav" aria-label="Navigazione principale">
@@ -300,7 +310,7 @@ export default function AppHeader({ session, theme = 'bacheca' }) {
       </div>
       {previewSection?.pathname === pathname && typeof document !== 'undefined' && createPortal(
         <div className={`section-drag-preview app-header--${previewSection.theme}`} aria-hidden="true">
-          <div className="section-drag-preview__brand">HiddenGems</div>
+          <div className="section-drag-preview__brand"><BrandMark /> <span>HiddenGems</span></div>
           <div className="section-drag-preview__content">
             <span className="section-drag-preview__icon">{previewSection.icon}</span>
             <strong>{previewSection.label}</strong>
