@@ -7,11 +7,26 @@ import { cambiaPassword, eliminaAccount } from '../../lib/accountSettings';
 import { esci } from '../../lib/registration';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
 
+function IconEye({ visible }) {
+  return visible ? (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M3 3l18 18M10.6 10.7a2 2 0 0 0 2.7 2.7M9.9 5.2A10.7 10.7 0 0 1 12 5c5.2 0 8.5 4.7 9 7-.2 1-1 2.1-2.1 3.1M6.2 6.2C3.9 7.6 2.4 9.9 2 12c.5 2.3 3.8 7 10 7 1.1 0 2.1-.2 3-.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ) : (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M2 12s3.3-7 10-7 10 7 10 7-3.3 7-10 7S2 12 2 12Z" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="1.8" />
+    </svg>
+  );
+}
+
 export default function Impostazioni() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [nuovaPassword, setNuovaPassword] = useState('');
   const [confermaNuovaPassword, setConfermaNuovaPassword] = useState('');
+  const [mostraNuovaPassword, setMostraNuovaPassword] = useState(false);
+  const [mostraConfermaNuovaPassword, setMostraConfermaNuovaPassword] = useState(false);
   const [salvataggio, setSalvataggio] = useState(false);
   const [eliminando, setEliminando] = useState(false);
 
@@ -73,11 +88,23 @@ export default function Impostazioni() {
           </button>
         </div>
 
-        <form onSubmit={handleCambiaPassword} className="card card--panel" style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+        <form onSubmit={handleCambiaPassword} className="card card--panel settings-password-form">
           <h4 style={{ margin: 0 }}>Cambia password</h4>
-          <input type="password" placeholder="Nuova password" value={nuovaPassword} onChange={(e) => setNuovaPassword(e.target.value)} required />
-          <input type="password" placeholder="Conferma nuova password" value={confermaNuovaPassword} onChange={(e) => setConfermaNuovaPassword(e.target.value)} required />
-          <button type="submit" disabled={salvataggio} className="btn btn--secondary btn--block">
+          <label className="password-field">
+            <span className="visually-hidden">Nuova password</span>
+            <input type={mostraNuovaPassword ? 'text' : 'password'} autoComplete="new-password" placeholder="Nuova password" value={nuovaPassword} onChange={(e) => setNuovaPassword(e.target.value)} required />
+            <button type="button" className="password-field__toggle" onClick={() => setMostraNuovaPassword((visible) => !visible)} aria-label={mostraNuovaPassword ? 'Nascondi password' : 'Mostra password'} aria-pressed={mostraNuovaPassword}>
+              <IconEye visible={mostraNuovaPassword} />
+            </button>
+          </label>
+          <label className="password-field">
+            <span className="visually-hidden">Conferma nuova password</span>
+            <input type={mostraConfermaNuovaPassword ? 'text' : 'password'} autoComplete="new-password" placeholder="Conferma nuova password" value={confermaNuovaPassword} onChange={(e) => setConfermaNuovaPassword(e.target.value)} required />
+            <button type="button" className="password-field__toggle" onClick={() => setMostraConfermaNuovaPassword((visible) => !visible)} aria-label={mostraConfermaNuovaPassword ? 'Nascondi password' : 'Mostra password'} aria-pressed={mostraConfermaNuovaPassword}>
+              <IconEye visible={mostraConfermaNuovaPassword} />
+            </button>
+          </label>
+          <button type="submit" disabled={salvataggio} className="btn btn--secondary">
             {salvataggio ? 'Salvataggio...' : 'Aggiorna password'}
           </button>
         </form>

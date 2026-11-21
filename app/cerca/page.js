@@ -109,18 +109,18 @@ export default function Cerca() {
         <form onSubmit={eseguiRicerca} className="search-form">
           {erroreRicerca && <p className="form-error" role="alert">{erroreRicerca}</p>}
           <div className="search-form__primary">
-            <div className="field search-form__type">
-              <label className="field__label" htmlFor="search-type">Cerco</label>
+            <label className="search-form__type" htmlFor="search-type">
+              <span className="field__label">Cerco</span>
               <select id="search-type" value={tipoAccount} onChange={(e) => cambiaTipo(e.target.value)}>
                 <option value="giocatore">Giocatori</option>
                 <option value="allenatore">Allenatori</option>
                 <option value="scout">Scout</option>
                 <option value="societa">Società</option>
               </select>
-            </div>
-            <label className="search-form__query">
+            </label>
+            <label className="search-form__query" htmlFor="search-name">
               <span className="field__label">Nome o cognome</span>
-              <input type="search" placeholder="Es. Rossi, Milano…" value={testoRicerca} onChange={(e) => setTestoRicerca(e.target.value)} />
+              <input id="search-name" type="search" placeholder="Es. Rossi, Milano…" value={testoRicerca} onChange={(e) => setTestoRicerca(e.target.value)} />
             </label>
             <button type="submit" disabled={cercando} className="search-submit">
               {cercando ? 'Cerco…' : 'Cerca'}

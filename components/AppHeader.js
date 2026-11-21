@@ -78,7 +78,7 @@ const NAV_ITEMS = [
   { href: '/impostazioni', label: 'Impostazioni', shortLabel: 'Impost.', icon: <IconSettings />, title: 'Impostazioni', theme: 'impostazioni' },
 ];
 
-export default function AppHeader({ session, theme = 'bacheca', showPublish = false }) {
+export default function AppHeader({ session, theme = 'bacheca' }) {
   const router = useRouter();
   const pathname = usePathname();
   const touchStart = useRef(null);
@@ -272,12 +272,6 @@ export default function AppHeader({ session, theme = 'bacheca', showPublish = fa
           <p className="app-header__brand">HiddenGems</p>
         </div>
 
-        {showPublish && (
-          <Link href="/feed/carica" className="app-header__publish" aria-label="Pubblica un video" title="Pubblica un video">
-            <span aria-hidden="true">+</span>
-          </Link>
-        )}
-
         <nav className="app-header__nav" aria-label="Navigazione principale">
             {NAV_ITEMS.map((item) => {
               const active = item.href === '/'
@@ -299,6 +293,10 @@ export default function AppHeader({ session, theme = 'bacheca', showPublish = fa
               );
             })}
         </nav>
+        <Link href="/feed/carica" className="app-header__publish" aria-label="Pubblica un video" title="Pubblica un video">
+          <span aria-hidden="true">+</span>
+          <span className="app-header__publish-label">Pubblica</span>
+        </Link>
       </div>
       {previewSection?.pathname === pathname && typeof document !== 'undefined' && createPortal(
         <div className={`section-drag-preview app-header--${previewSection.theme}`} aria-hidden="true">

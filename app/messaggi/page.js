@@ -11,6 +11,15 @@ import {
   getMessaggi, inviaMessaggio, sottoscriviMessaggi,
 } from '../../lib/chat';
 
+function IconChat() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H6l-3 2v-9.5A7.5 7.5 0 0 1 10.5 4h2A7.5 7.5 0 0 1 20 11.5Z" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+      <path d="M8 12h.01M12 12h.01M16 12h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export default function Messaggi() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -192,7 +201,7 @@ export default function Messaggi() {
           <div className="message-list">
             {inApprovazione.length === 0 ? (
               <div className="directory-empty">
-                <span className="directory-empty__mark" aria-hidden="true">01</span>
+                <span className="directory-empty__mark" aria-hidden="true"><IconChat /></span>
                 <h2>Nessuna richiesta in attesa</h2>
                 <p>Quando qualcuno ti contatta, puoi rivedere e approvare la richiesta qui.</p>
                 <Link href="/cerca" className="btn btn--outline">Esplora profili</Link>
@@ -215,7 +224,7 @@ export default function Messaggi() {
           <div className="message-list">
             {approvate.length === 0 ? (
               <div className="directory-empty">
-                <span className="directory-empty__mark" aria-hidden="true">02</span>
+                <span className="directory-empty__mark" aria-hidden="true"><IconChat /></span>
                 <h2>La tua inbox è pronta</h2>
                 <p>Avvia una conversazione dal profilo di un giocatore, allenatore, scout o società.</p>
                 <Link href="/cerca" className="btn btn--secondary">Trova un profilo</Link>

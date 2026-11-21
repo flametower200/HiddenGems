@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import AppHeader from '../../components/AppHeader';
 import UserAvatar from '../../components/UserAvatar';
+import ProfileStatGrid from '../../components/ProfileStatGrid';
 import CareerEditor from '../../components/CareerEditor';
 import ItalianLocationFields from '../../components/ItalianLocationFields';
 import PlayerPositionFields from '../../components/PlayerPositionFields';
@@ -358,6 +359,10 @@ export default function MioProfilo() {
             </div>
           </div>
 
+          <button onClick={() => setModifica(true)} className="btn btn--primary profile-edit-button">
+            Modifica profilo
+          </button>
+
           <div className="stat-row profile-overview__stats">
             <div className="stat-chip"><span className="stat-chip__value">{contatori.follower ?? 0}</span><span className="stat-chip__label">follower</span></div>
             <div className="stat-chip"><span className="stat-chip__value">{contatori.seguiti ?? 0}</span><span className="stat-chip__label">seguiti</span></div>
@@ -368,45 +373,45 @@ export default function MioProfilo() {
         {!modifica ? (
           <>
             <section className="profile-details">
-              {profilo.tipo_account !== 'societa' && (
-                <>
-                  <p><strong>Genere:</strong> {profilo.genere || '—'}</p>
-                  <p><strong>Età:</strong> {etaDaData(dettaglio?.data_nascita) ?? '—'}</p>
-                </>
-              )}
-              {profilo.tipo_account === 'giocatore' && dettaglio && (
-                <>
-                  <p><strong>Ruolo:</strong> {dettaglio.ruolo_principale} {dettaglio.ruolo_secondario ? `/ ${dettaglio.ruolo_secondario}` : ''}</p>
-                  <p><strong>Piede:</strong> {dettaglio.piede || '—'}</p>
-                  <p><strong>Altezza/Peso:</strong> {dettaglio.altezza || '—'} cm / {dettaglio.peso || '—'} kg</p>
-                  <p><strong>In cerca di squadra:</strong> {dettaglio.in_cerca_squadra ? 'Sì' : 'No'}</p>
-                  <p><strong>Stato:</strong> {CONTRACT_STATUS_OPTIONS.find((option) => option.value === canonicalContractStatus(dettaglio.stato_contratto))?.label || dettaglio.stato_contratto || '—'}</p>
-                </>
-              )}
-              {profilo.tipo_account === 'allenatore' && dettaglio && (
-                <>
-                  <p><strong>Patentino:</strong> {dettaglio.patentino}</p>
-                  <p><strong>Modulo preferito:</strong> {dettaglio.modulo_preferito || '—'}</p>
-                  <p><strong>In cerca di squadra:</strong> {dettaglio.in_cerca_squadra ? 'Sì' : 'No'}</p>
-                </>
-              )}
-              {profilo.tipo_account === 'scout' && dettaglio && (
-                <>
-                  <p><strong>Società attuale:</strong> {dettaglio.societa_attuale || '—'}</p>
-                  <p style={{ marginBottom: 0 }}><strong>In cerca di squadra:</strong> {dettaglio.in_cerca_squadra ? 'Sì' : 'No'}</p>
-                </>
-              )}
-              {profilo.tipo_account === 'societa' && dettaglio && (
-                <>
-                  <p><strong>Categoria:</strong> {dettaglio.categoria || '—'}</p>
-                  <p><strong>Annata:</strong> {dettaglio.annata_squadra}</p>
-                  <p><strong>Palmares:</strong> {dettaglio.palmares || '—'}</p>
+              <ProfileStatGrid
+                items={[
+                  ...(profilo.tipo_account !== 'societa' ? [
+                    { label: 'Genere', value: profilo.genere || '—' },
+                    { label: 'Età', value: etaDaData(dettaglio?.data_nascita) ?? '—' },
+                  ] : []),
+                  ...(profilo.tipo_account === 'giocatore' && dettaglio ? [
+                    { label: 'Ruolo', value: [dettaglio.ruolo_principale, dettaglio.ruolo_secondario].filter(Boolean).join(' / ') || '—' },
+                    { label: 'Piede preferito', value: dettaglio.piede || '—', icon: 'foot' },
+                    { label: 'Altezza / peso', value: `${dettaglio.altezza || '—'} cm / ${dettaglio.peso || '—'} kg` },
+                    { label: 'Disponibilità', value: dettaglio.in_cerca_squadra ? 'In cerca di squadra' : 'Non disponibile', available: !!dettaglio.in_cerca_squadra },
+                    { label: 'Stato contrattuale', value: CONTRACT_STATUS_OPTIONS.find((option) => option.value === canonicalContractStatus(dettaglio.stato_contratto))?.label || dettaglio.stato_contratto || '—' },
+                  ] : []),
+                  ...(profilo.tipo_account === 'allenatore' && dettaglio ? [
+                    { label: 'Patentino', value: dettaglio.patentino || '—' },
+                    { label: 'Modulo preferito', value: dettaglio.modulo_preferito || '—' },
+                    { label: 'Disponibilità', value: dettaglio.in_cerca_squadra ? 'In cerca di squadra' : 'Non disponibile', available: !!dettaglio.in_cerca_squadra },
+                  ] : []),
+                  ...(profilo.tipo_account === 'scout' && dettaglio ? [
+                    { label: 'Società attuale', value: dettaglio.societa_attuale || '—' },
+                    { label: 'Disponibilità', value: dettaglio.in_cerca_squadra ? 'In cerca di squadra' : 'Non disponibile', available: !!dettaglio.in_cerca_squadra },
+                  ] : []),
+                  ...(profilo.tipo_account === 'societa' && dettaglio ? [
+                    { label: 'Categoria', value: dettaglio.categoria || '—' },
+                    { label: 'Annata', value: dettaglio.annata_squadra || '—' },
+                    { label: 'Giocatori in rosa', value: rosaGiocatori.length },
+                    { label: 'Allenatori in rosa', value: rosaAllenatori.length },
+                  ] : []),
+                ]}
+              />
+              {profilo.tipo_account === 'societa' && dettaglio?.palmares && <p className="profile-info"><strong>Palmares:</strong> {dettaglio.palmares}</p>}
+              {profilo.tipo_account === 'societa' && (
+                <div className="profile-info">
                   {rosaAllenatori.length > 0 && <p><strong>Allenatori:</strong> {rosaAllenatori.map((profile) => `${profile.nome} ${profile.cognome || ''}`).join(', ')}</p>}
-                  {rosaGiocatori.length > 0 && <p style={{ marginBottom: 0 }}><strong>Giocatori:</strong> {rosaGiocatori.map((profile) => `${profile.nome} ${profile.cognome || ''}`).join(', ')}</p>}
-                </>
+                  {rosaGiocatori.length > 0 && <p><strong>Giocatori:</strong> {rosaGiocatori.map((profile) => `${profile.nome} ${profile.cognome || ''}`).join(', ')}</p>}
+                </div>
               )}
               {(dettaglio?.regione || dettaglio?.provincia) && (
-                <p><strong>Zona:</strong> {[dettaglio.regione, dettaglio.provincia].filter(Boolean).join(' · ')}</p>
+                <p className="profile-info"><strong>Zona:</strong> {[dettaglio.regione, dettaglio.provincia].filter(Boolean).join(' · ')}</p>
               )}
               {Array.isArray(dettaglio?.carriera) && dettaglio.carriera.length > 0 && (
                 <div className="profile-career">
@@ -421,11 +426,8 @@ export default function MioProfilo() {
                   ))}
                 </div>
               )}
-              {profilo.bio && <p style={{ marginTop: 12, marginBottom: 0 }}>{profilo.bio}</p>}
+              {profilo.bio && <p className="profile-info">{profilo.bio}</p>}
             </section>
-            <button onClick={() => setModifica(true)} className="btn btn--primary profile-edit-button">
-              Modifica profilo
-            </button>
           </>
         ) : (
           <div className="card card--panel profile-editor">

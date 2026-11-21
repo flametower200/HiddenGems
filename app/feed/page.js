@@ -24,6 +24,15 @@ function IconComment() {
   );
 }
 
+function IconVideo() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="3" y="5" width="18" height="14" rx="3" fill="none" stroke="currentColor" strokeWidth="1.7" />
+      <path d="m10 9 5 3-5 3V9Z" fill="currentColor" />
+    </svg>
+  );
+}
+
 function IconDelete() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -201,7 +210,6 @@ function PostCard({ post, sessionUserId, onDelete }) {
 
 export default function Feed() {
   const [session, setSession] = useState(null);
-  const [tipoAccount, setTipoAccount] = useState(null);
   const [loading, setLoading] = useState(true);
   const [post, setPost] = useState([]);
   const [erroreFeed, setErroreFeed] = useState('');
@@ -215,12 +223,10 @@ export default function Feed() {
       setSession(session);
       if (session) {
         const [profileResult, feedPosts] = await Promise.all([
-          supabase.from('profiles').select('tipo_account').eq('id', session.user.id).single(),
+          supabase.from('profiles').select('id').eq('id', session.user.id).single(),
           getFeed({ userId: session.user.id }),
         ]);
         if (profileResult.error) throw profileResult.error;
-        const profilo = profileResult.data;
-        setTipoAccount(profilo?.tipo_account || null);
         setPost(feedPosts);
       }
     } catch (error) {
@@ -250,7 +256,7 @@ export default function Feed() {
 
   return (
     <main className="page">
-      <AppHeader session={session} theme="feed" showPublish={tipoAccount === 'giocatore'} />
+      <AppHeader session={session} theme="feed" />
       <div className="container container--wide feed-container">
         <div className="feed-heading">
           <div>
@@ -270,7 +276,7 @@ export default function Feed() {
             </div>
           ) : post.length === 0 ? (
             <div className="feed-empty">
-              <span className="feed-empty__mark" aria-hidden="true">HG</span>
+              <span className="feed-empty__mark" aria-hidden="true"><IconVideo /></span>
               <h2>Il campo è libero</h2>
               <p>Non ci sono ancora video nel feed. I nuovi contenuti appariranno qui.</p>
             </div>
