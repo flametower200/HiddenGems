@@ -350,7 +350,7 @@ export default function MioProfilo() {
         <section className="profile-overview">
           <div className="profile-head">
             <label className="profile-avatar-upload" title="Carica o modifica la foto profilo">
-              <UserAvatar src={fotoUrl} name={`${profilo.nome} ${profilo.cognome || ''}`} size={88} className="avatar" />
+              <UserAvatar src={fotoUrl} name={`${profilo.nome} ${profilo.cognome || ''}`} size={72} className="avatar" />
               <span className="profile-avatar-upload__badge" aria-hidden="true">
                 <svg viewBox="0 0 20 20">
                   <path d="M3 6.5h3l1.5-2h5l1.5 2h3v9H3v-9Z" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />

@@ -186,7 +186,7 @@ export default function Messaggi() {
             className={`tab ${tab === 'approvazione' ? 'is-active' : ''}`}
             aria-pressed={tab === 'approvazione'}
           >
-            In approvazione <span className="message-tabs__count">{inApprovazione.length}</span>
+            In approvazione<span className="message-tabs__count">{inApprovazione.length}</span>
           </button>
           <button
             onClick={() => { setTab('approvate'); setChatAperta(null); }}

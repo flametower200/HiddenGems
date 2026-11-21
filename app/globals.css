@@ -1788,9 +1788,6 @@ select { padding-right: 40px; }
 .password-field__toggle svg { width: 19px; height: 19px; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
-@media (max-width: 640px) {
-  .app-header__inner { grid-template-columns: minmax(0, 1fr) auto;   }
-
   .auth-card {
     border-color: var(--surface-border);
     border-radius: 16px;
@@ -1803,7 +1800,7 @@ select { padding-right: 40px; }
 
   .app-header {
     display: flex;
-    height: 68px;
+    height: 64px;
     align-items: center;
     padding: 0;
     -webkit-backdrop-filter: blur(12px);
@@ -1812,14 +1809,14 @@ select { padding-right: 40px; }
 
   .app-header__inner {
     width: 100%;
-    min-height: 68px;
+    min-height: 64px;
   }
 
   .app-header__brand {
     display: inline-flex;
     align-items: center;
-    gap: 9px;
-    font-size: 1.2rem;
+    gap: 10px;
+    font-size: 19px;
     font-weight: 800;
     letter-spacing: -0.04em;
   }
@@ -1827,8 +1824,8 @@ select { padding-right: 40px; }
   .app-header__brand svg,
   .section-drag-preview__brand svg {
     display: block;
-    width: 26px;
-    height: 26px;
+    width: 24px;
+    height: 24px;
     flex: 0 0 auto;
   }
 
@@ -1871,11 +1868,11 @@ select { padding-right: 40px; }
     margin-left: auto;
   }
 
-  .profile-stat-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .profile-stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .profile-stat-tile {
     min-height: 0;
     gap: 6px;
-    padding: 14px 18px;
+    padding: 14px 16px;
     border-radius: 12px;
     transition: border-color 150ms cubic-bezier(0.16, 1, 0.3, 1), background 150ms cubic-bezier(0.16, 1, 0.3, 1), transform 150ms cubic-bezier(0.16, 1, 0.3, 1);
   }
@@ -1927,25 +1924,27 @@ select { padding-right: 40px; }
     right: -2px;
     bottom: -2px;
     display: grid;
-    width: 30px;
-    height: 30px;
+    width: 26px;
+    height: 26px;
     place-items: center;
-    border: 2px solid #fff;
+    border: 1px solid #e2e8f0;
     border-radius: 50%;
-    background: var(--color-pitch);
-    color: #fff;
+    background: #fff;
+    color: var(--color-pitch);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
     opacity: 0;
     transform: translateY(3px);
     transition: opacity 150ms cubic-bezier(0.16, 1, 0.3, 1), transform 150ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  .profile-avatar-upload__badge svg { width: 18px; height: 18px; }
+  .profile-avatar-upload__badge svg { width: 14px; height: 14px; }
   .profile-avatar-upload:hover .user-avatar,
   .profile-avatar-upload:focus-within .user-avatar { filter: brightness(0.88); }
   .profile-avatar-upload:hover .profile-avatar-upload__badge,
   .profile-avatar-upload:focus-within .profile-avatar-upload__badge { opacity: 1; transform: translateY(0); }
 
   .search-form__primary { min-height: 56px; }
+  .search-form { padding: 0; }
   .search-form__type,
   .search-form__query { padding-top: 6px; padding-bottom: 6px; }
   .search-submit { margin-right: 8px; }
@@ -1957,6 +1956,7 @@ select { padding-right: 40px; }
     color: var(--color-muted);
     transition: transform 150ms cubic-bezier(0.16, 1, 0.3, 1);
   }
+  .search-filters__icon { width: 18px; height: 18px; flex: 0 0 auto; color: var(--color-muted); }
 
   .search-filters[open] .search-filters__chevron { transform: rotate(180deg); }
   .search-filters__count { margin-left: 2px; }
@@ -1971,14 +1971,15 @@ select { padding-right: 40px; }
   .message-tabs .tab.is-active { border: 1px solid #e2e8f0; box-shadow: none; }
   .message-tabs__count {
     display: inline-grid;
-    min-width: 22px;
-    height: 22px;
+    min-width: 0;
+    height: auto;
     margin-left: 6px;
     place-items: center;
-    border-radius: 9999px;
-    background: #f1f5f9;
-    color: #475569;
-    font-size: 0.72rem;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    color: #0f172a;
+    font-size: 11px;
     font-variant-numeric: tabular-nums;
   }
 
@@ -2010,7 +2011,7 @@ select { padding-right: 40px; }
     .app-header__inner { min-height: 0; }
     .profile-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .profile-stat-tile { padding: 12px 14px; }
-    .profile-avatar-upload__badge { width: 28px; height: 28px; opacity: 1; transform: none; }
+    .profile-avatar-upload__badge { width: 26px; height: 26px; opacity: 1; transform: none; }
     .search-form__primary { min-height: 0; }
     .message-tabs { width: fit-content; }
   }
@@ -2028,6 +2029,7 @@ select { padding-right: 40px; }
   .message-conversation:hover,
   .talent-card:hover { box-shadow: var(--shadow-card); }
   .profile-stat-tile { border-radius: 16px; }
+@media (max-width: 640px) {
   .app-header__nav { justify-self: stretch; }
   .search-form__primary { grid-template-columns: minmax(0, 1fr) auto; }
   .search-form__type { grid-column: 1 / -1; border-right: 0; border-bottom: 1px solid var(--surface-border); }
@@ -2040,3 +2042,7 @@ select { padding-right: 40px; }
   .profile-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .settings-password-form > .btn { align-self: flex-start; }
 }
+
+.feed-list { width: 100%; max-width: 1100px; }
+.feed-post { width: 100%; max-width: 680px; justify-self: center; }
+.feed-empty { width: 100%; max-width: 1100px; }

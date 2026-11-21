@@ -129,6 +129,12 @@ export default function Cerca() {
 
           <details className="search-filters">
             <summary>
+              <svg className="search-filters__icon" viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M3 5h14M5.5 10h9M8 15h4" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+                <circle cx="7" cy="5" r="1.5" fill="#fff" stroke="currentColor" strokeWidth="1.4" />
+                <circle cx="12" cy="10" r="1.5" fill="#fff" stroke="currentColor" strokeWidth="1.4" />
+                <circle cx="10" cy="15" r="1.5" fill="#fff" stroke="currentColor" strokeWidth="1.4" />
+              </svg>
               <span>Filtri avanzati</span>
               {filtriAttivi > 0 && <span className="search-filters__count">{filtriAttivi} attivi</span>}
               <svg className="search-filters__chevron" viewBox="0 0 20 20" aria-hidden="true">
