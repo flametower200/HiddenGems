@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { supabase } from '../lib/supabase';
 import { registraUtente, accedi } from '../lib/registration';
 import LanguagePicker from '../components/LanguagePicker';
@@ -26,6 +27,7 @@ export default function Home() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState('login');
+  const [authView, setAuthView] = useState(false);
   const [formError, setFormError] = useState('');
 
   const [email, setEmail] = useState('');
@@ -63,6 +65,13 @@ export default function Home() {
     });
     return () => authListener.subscription.unsubscribe();
   }, []);
+
+  const openAuth = (nextMode) => {
+    setMode(nextMode);
+    setFormError('');
+    setAuthView(true);
+    window.scrollTo(0, 0);
+  };
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -139,12 +148,135 @@ export default function Home() {
   if (session) return <Feed />;
 
   return (
-      <main className="page auth-shell">
-        <div className="auth-card">
+    <div className="landing-shell">
+      <header className="landing-header">
+        <Link className="landing-brand" href="/" aria-label="HiddenGems, pagina iniziale">
+          <svg viewBox="0 0 32 32" aria-hidden="true">
+            <path d="M16 2 30 16 16 30 2 16 16 2Z" fill="none" stroke="currentColor" strokeWidth="2" />
+            <path d="M16 7 25 16 16 25 7 16 16 7Z" fill="currentColor" />
+            <path d="M16 7v18M7 16h18" stroke="#163022" strokeWidth="1.5" />
+          </svg>
+          <span>HiddenGems</span>
+        </Link>
+        <nav className="landing-header__actions" aria-label="Accesso">
+          {authView ? (
+            <button type="button" className="landing-nav-link" onClick={() => { setAuthView(false); setFormError(''); }}>
+              Torna alla presentazione
+            </button>
+          ) : (
+            <>
+              <button type="button" className="landing-nav-link" onClick={() => openAuth('login')}>
+                Accedi
+              </button>
+              <button type="button" className="landing-nav-cta" onClick={() => openAuth('register')}>
+                Registrati
+              </button>
+            </>
+          )}
+        </nav>
+      </header>
+
+      {!authView ? (
+        <main className="landing-main">
+          <section className="landing-hero">
+            <div className="landing-hero__copy">
+              <p className="landing-eyebrow"><span /> SCOUTING, SENZA BARRIERE</p>
+              <h1>Il campo torna <span>a parlare.</span></h1>
+              <p className="landing-hero__description">
+                Qui conta il talento, non conoscere le persone giuste. HiddenGems mette
+                in contatto giocatori, allenatori, scout e società, dando spazio alle
+                capacità mostrate in campo e aiutando a scoprire nuovi profili.
+              </p>
+              <div className="landing-hero__actions">
+                <button type="button" className="landing-primary-cta" onClick={() => openAuth('register')}>
+                  Entra nella rete <span aria-hidden="true">→</span>
+                </button>
+                <a className="landing-secondary-cta" href="#come-funziona">Scopri come funziona</a>
+              </div>
+              <div className="landing-proof">
+                <span className="landing-proof__mark" aria-hidden="true">01</span>
+                <p><strong>Più visibilità.</strong> Meno distanze. Relazioni più dirette.</p>
+              </div>
+            </div>
+
+            <div className="landing-hero__visual" aria-hidden="true">
+              <div className="landing-visual__topline"><span>HIDDEN GEMS / ITALIA</span><span>01 — 04</span></div>
+              <div className="landing-pitch">
+                <span className="landing-pitch__halfway" />
+                <span className="landing-pitch__circle" />
+                <span className="landing-pitch__box landing-pitch__box--top" />
+                <span className="landing-pitch__box landing-pitch__box--bottom" />
+                <span className="landing-pitch__spot landing-pitch__spot--one" />
+                <span className="landing-pitch__spot landing-pitch__spot--two" />
+                <span className="landing-pitch__spot landing-pitch__spot--three" />
+                <div className="landing-signal landing-signal--one"><i /> TALENTO IN MOVIMENTO</div>
+                <div className="landing-signal landing-signal--two"><i /> NUOVE CONNESSIONI</div>
+              </div>
+              <div className="landing-visual__footer">
+                <span>Il prossimo nome da ricordare</span>
+                <strong>potrebbe essere il tuo.</strong>
+              </div>
+            </div>
+          </section>
+
+          <section className="landing-intro" id="come-funziona">
+            <div className="landing-intro__heading">
+              <p className="landing-eyebrow">UNA RETE PIÙ APERTA</p>
+              <h2>Il talento c’è.<br />Facciamolo incontrare.</h2>
+            </div>
+            <p>
+              Nel calcio, emergere non dovrebbe dipendere dalle conoscenze o dalla
+              geografia. HiddenGems rende più semplice scoprire persone e percorsi
+              calcistici, dando a ogni profilo uno spazio per raccontarsi e a chi
+              cerca nuove figure strumenti per orientarsi.
+            </p>
+          </section>
+
+          <section className="landing-features" aria-label="Cosa puoi fare su HiddenGems">
+            <article className="landing-feature landing-feature--primary">
+              <span className="landing-feature__index">01 / GIOCATORI</span>
+              <div className="landing-feature__icon landing-feature__icon--play" aria-hidden="true">▶</div>
+              <h3>Fatti vedere in campo.</h3>
+              <p>Racconta il tuo profilo e condividi i video delle tue giocate con una rete che cerca nuovi talenti.</p>
+              <span className="landing-feature__link">Profilo e video <span aria-hidden="true">↗</span></span>
+            </article>
+            <article className="landing-feature">
+              <span className="landing-feature__index">02 / SCOUTING</span>
+              <div className="landing-feature__icon" aria-hidden="true">⌕</div>
+              <h3>Trova il profilo giusto.</h3>
+              <p>Cerca per ruolo, caratteristiche e zona. Scopri giocatori e professionisti anche fuori dai circuiti abituali.</p>
+              <span className="landing-feature__link">Ricerca mirata <span aria-hidden="true">↗</span></span>
+            </article>
+            <article className="landing-feature">
+              <span className="landing-feature__index">03 / PERCORSI</span>
+              <div className="landing-feature__icon" aria-hidden="true">↗</div>
+              <h3>Costruisci connessioni.</h3>
+              <p>Presenta la tua esperienza, segui i profili interessanti e avvia conversazioni in modo diretto e trasparente.</p>
+              <span className="landing-feature__link">Una rete, più vicina <span aria-hidden="true">↗</span></span>
+            </article>
+          </section>
+
+          <section className="landing-closing">
+            <div>
+              <p className="landing-eyebrow">IL PROSSIMO PASSO È TUO</p>
+              <h2>Il talento merita<br />un campo più grande.</h2>
+            </div>
+            <button type="button" className="landing-primary-cta" onClick={() => openAuth('register')}>
+              Crea il tuo profilo <span aria-hidden="true">→</span>
+            </button>
+          </section>
+          <footer className="landing-footer">
+            <span>HiddenGems</span>
+            <span>Una rete più aperta per il calcio.</span>
+          </footer>
+        </main>
+      ) : (
+        <main className="page auth-shell landing-auth">
+          <div className="auth-card">
             <div className="auth-brand">
               <span className="brand-badge">HG</span>
-              <h1>HiddenGems</h1>
-              <p>Il campo dove i talenti si fanno notare</p>
+              <h1>{mode === 'login' ? 'Bentornato' : 'Entra nella rete'}</h1>
+              <p>{mode === 'login' ? 'Accedi al tuo spazio HiddenGems' : 'Crea il tuo profilo HiddenGems'}</p>
             </div>
 
             <div className="auth-toggle">
@@ -283,7 +415,9 @@ export default function Home() {
                 {loading ? <><span className="button-spinner" aria-hidden="true" /> Attendi…</> : mode === 'login' ? 'Accedi' : 'Crea account'}
               </button>
             </form>
-        </div>
-      </main>
+          </div>
+        </main>
+      )}
+    </div>
   );
 }
