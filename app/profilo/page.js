@@ -7,6 +7,7 @@ import UserAvatar from '../../components/UserAvatar';
 import { getContatoriProfilo } from '../../lib/social';
 import { caricaProfiloCompleto, invalidaCacheProfili } from '../../lib/profileHelpers';
 import LanguagePicker from '../../components/LanguagePicker';
+import { caricaRosaSocieta, aggiungiMembroRosa, rimuoviMembroRosa } from '../../lib/clubRoster';
 import {
   COUNTRY_OPTIONS,
   COACH_LICENSE_OPTIONS,
@@ -29,6 +30,16 @@ const AVATAR_FORMATS = {
   'image/png': 'png',
   'image/webp': 'webp',
 };
+
+function etaDaData(dataNascita) {
+  if (!dataNascita) return null;
+  const nascita = new Date(`${dataNascita}T00:00:00`);
+  if (Number.isNaN(nascita.getTime())) return null;
+  const oggi = new Date();
+  let eta = oggi.getFullYear() - nascita.getFullYear();
+  if (oggi.getMonth() < nascita.getMonth() || (oggi.getMonth() === nascita.getMonth() && oggi.getDate() < nascita.getDate())) eta -= 1;
+  return eta;
+}
 
 export default function MioProfilo() {
   const [session, setSession] = useState(null);
@@ -60,22 +71,34 @@ export default function MioProfilo() {
   const [palmares, setPalmares] = useState('');
   const [categoria, setCategoria] = useState('');
   const [linguePartlate, setLinguePartlate] = useState([]);
+  const [carriera, setCarriera] = useState('');
+  const [inCercaGiocatoriAllenatore, setInCercaGiocatoriAllenatore] = useState(false);
+  const [cercaPatentino, setCercaPatentino] = useState('');
+  const [cercaFormazione, setCercaFormazione] = useState('');
+  const [cercaLingua, setCercaLingua] = useState('');
+  const [rosaGiocatori, setRosaGiocatori] = useState([]);
+  const [rosaAllenatori, setRosaAllenatori] = useState([]);
+  const [membroRosaId, setMembroRosaId] = useState('');
+  const [membroRosaRuolo, setMembroRosaRuolo] = useState('giocatore');
+  const [squadraAttuale, setSquadraAttuale] = useState(null);
 
   const caricaProfilo = useCallback(async (userId) => {
     setLoading(true);
     try {
-      const [{ profilo: p, dettaglio: d }, c] = await Promise.all([
+      const [{ profilo: p, dettaglio: d, squadraAttuale: squadra }, c] = await Promise.all([
         caricaProfiloCompleto(userId),
         getContatoriProfilo(userId),
       ]);
       setProfilo(p);
       setDettaglio(d);
+      setSquadraAttuale(squadra);
 
       setBio(p.bio || '');
       setFotoUrl(p.foto_url || '');
       setNazioneProfilo(normalizeCountry(d?.nazione));
       setRegioneProfilo(d?.regione || '');
       setProvinciaProfilo(d?.provincia || '');
+      setCarriera(Array.isArray(d?.carriera) ? d.carriera.join('\n') : '');
       if (p.tipo_account === 'giocatore' && d) {
         setInCercaSquadra(!!d.in_cerca_squadra);
         setRuoloSecondario(d.ruolo_secondario || '');
@@ -86,6 +109,7 @@ export default function MioProfilo() {
         setLinguePartlate(normalizeLanguageList((d.lingue_parlate || []).flatMap((language) => language.split(','))));
       } else if (p.tipo_account === 'allenatore' && d) {
         setInCercaSquadra(!!d.in_cerca_squadra);
+        setInCercaGiocatoriAllenatore(!!d.in_cerca_giocatori);
         setPatentino(d.patentino || '');
         setModuloPreferito(d.modulo_preferito || '');
         setStileGioco(d.stile_gioco || '');
@@ -98,6 +122,12 @@ export default function MioProfilo() {
         setInCercaGiocatori(!!d.in_cerca_giocatori);
         setPalmares(d.palmares || '');
         setCategoria(d.categoria || '');
+        setCercaPatentino(d.cerca_patentino || '');
+        setCercaFormazione(d.cerca_formazione || '');
+        setCercaLingua(d.cerca_lingua || '');
+        const roster = await caricaRosaSocieta(p.id);
+        setRosaGiocatori(roster.giocatori);
+        setRosaAllenatori(roster.allenatori);
       }
 
       setContatori(c);
@@ -143,6 +173,30 @@ export default function MioProfilo() {
     setCaricandoFoto(false);
   };
 
+  const aggiungiRosa = async () => {
+    if (!membroRosaId.trim()) return;
+    try {
+      await aggiungiMembroRosa(profilo.id, membroRosaId.trim(), membroRosaRuolo);
+      const roster = await caricaRosaSocieta(profilo.id);
+      setRosaGiocatori(roster.giocatori);
+      setRosaAllenatori(roster.allenatori);
+      setMembroRosaId('');
+    } catch (error) {
+      alert('Errore aggiornamento rosa: ' + error.message);
+    }
+  };
+
+  const rimuoviRosa = async (memberId) => {
+    try {
+      await rimuoviMembroRosa(profilo.id, memberId);
+      const roster = await caricaRosaSocieta(profilo.id);
+      setRosaGiocatori(roster.giocatori);
+      setRosaAllenatori(roster.allenatori);
+    } catch (error) {
+      alert('Errore aggiornamento rosa: ' + error.message);
+    }
+  };
+
   const salva = async () => {
     setSalvataggio(true);
     const { data: { user } } = await supabase.auth.getUser();
@@ -158,6 +212,10 @@ export default function MioProfilo() {
       .eq('id', user.id);
 
     let errDettaglio = null;
+    const carrieraJson = carriera
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean);
     if (profilo.tipo_account === 'giocatore') {
       ({ error: errDettaglio } = await supabase.from('player_details').update({
         in_cerca_squadra: inCercaSquadra,
@@ -170,10 +228,12 @@ export default function MioProfilo() {
         nazione: nazioneProfilo,
         regione: nazioneProfilo === 'IT' ? regioneProfilo || null : null,
         provincia: nazioneProfilo === 'IT' ? provinciaProfilo || null : null,
+        carriera: carrieraJson,
       }).eq('profile_id', user.id));
     } else if (profilo.tipo_account === 'allenatore') {
       ({ error: errDettaglio } = await supabase.from('coach_details').update({
         in_cerca_squadra: inCercaSquadra,
+        in_cerca_giocatori: inCercaGiocatoriAllenatore,
         patentino,
         modulo_preferito: moduloPreferito || null,
         stile_gioco: stileGioco || null,
@@ -181,6 +241,7 @@ export default function MioProfilo() {
         nazione: nazioneProfilo,
         regione: nazioneProfilo === 'IT' ? regioneProfilo || null : null,
         provincia: nazioneProfilo === 'IT' ? provinciaProfilo || null : null,
+        carriera: carrieraJson,
       }).eq('profile_id', user.id));
     } else if (profilo.tipo_account === 'scout') {
       ({ error: errDettaglio } = await supabase.from('scout_details').update({
@@ -189,6 +250,7 @@ export default function MioProfilo() {
         nazione: nazioneProfilo || null,
         regione: nazioneProfilo === 'IT' ? regioneProfilo || null : null,
         provincia: nazioneProfilo === 'IT' ? provinciaProfilo || null : null,
+        carriera: carrieraJson,
       }).eq('profile_id', user.id));
     } else if (profilo.tipo_account === 'societa') {
       ({ error: errDettaglio } = await supabase.from('club_details').update({
@@ -199,6 +261,9 @@ export default function MioProfilo() {
         nazione: nazioneProfilo || null,
         regione: nazioneProfilo === 'IT' ? regioneProfilo || null : null,
         provincia: nazioneProfilo === 'IT' ? provinciaProfilo || null : null,
+        cerca_patentino: cercaPatentino || null,
+        cerca_formazione: cercaFormazione || null,
+        cerca_lingua: cercaLingua || null,
       }).eq('profile_id', user.id));
     }
 
@@ -223,6 +288,9 @@ export default function MioProfilo() {
         <section className="profile-overview">
           <div className="profile-head">
             <UserAvatar src={fotoUrl} name={`${profilo.nome} ${profilo.cognome || ''}`} size={88} className="avatar" />
+            {squadraAttuale && (
+              <UserAvatar src={squadraAttuale.foto_url} name={squadraAttuale.nome} size={48} className="avatar" />
+            )}
             <div>
               <p className="page-eyebrow">IL TUO PROFILO</p>
               <h1>{profilo.nome} {profilo.cognome}</h1>
@@ -240,6 +308,12 @@ export default function MioProfilo() {
         {!modifica ? (
           <>
             <section className="profile-details">
+              {profilo.tipo_account !== 'societa' && (
+                <>
+                  <p><strong>Genere:</strong> {profilo.genere || '—'}</p>
+                  <p><strong>Età:</strong> {etaDaData(dettaglio?.data_nascita) ?? '—'}</p>
+                </>
+              )}
               {profilo.tipo_account === 'giocatore' && dettaglio && (
                 <>
                   <p><strong>Ruolo:</strong> {dettaglio.ruolo_principale} {dettaglio.ruolo_secondario ? `/ ${dettaglio.ruolo_secondario}` : ''}</p>
@@ -268,8 +342,13 @@ export default function MioProfilo() {
                 <>
                   <p><strong>Categoria:</strong> {dettaglio.categoria || '—'}</p>
                   <p><strong>Annata:</strong> {dettaglio.annata_squadra}</p>
-                  <p style={{ marginBottom: 0 }}><strong>Palmares:</strong> {dettaglio.palmares || '—'}</p>
+                  <p><strong>Palmares:</strong> {dettaglio.palmares || '—'}</p>
+                  {rosaAllenatori.length > 0 && <p><strong>Allenatori:</strong> {rosaAllenatori.map((profile) => `${profile.nome} ${profile.cognome || ''}`).join(', ')}</p>}
+                  {rosaGiocatori.length > 0 && <p style={{ marginBottom: 0 }}><strong>Giocatori:</strong> {rosaGiocatori.map((profile) => `${profile.nome} ${profile.cognome || ''}`).join(', ')}</p>}
                 </>
+              )}
+              {Array.isArray(dettaglio?.carriera) && dettaglio.carriera.length > 0 && (
+                <p><strong>Carriera:</strong> {dettaglio.carriera.join(' · ')}</p>
               )}
               {profilo.bio && <p style={{ marginTop: 12, marginBottom: 0 }}>{profilo.bio}</p>}
             </section>
@@ -326,12 +405,17 @@ export default function MioProfilo() {
                   </select>
                 </div>
                 <LanguagePicker value={linguePartlate} onChange={setLinguePartlate} />
+                <div className="field">
+                  <label className="field__label">Carriera (una esperienza per riga)</label>
+                  <textarea value={carriera} onChange={(e) => setCarriera(e.target.value)} rows={4} />
+                </div>
               </>
             )}
 
             {profilo.tipo_account === 'allenatore' && (
               <>
                 <label className="checkbox-field"><input type="checkbox" checked={inCercaSquadra} onChange={(e) => setInCercaSquadra(e.target.checked)} /> In cerca di squadra</label>
+                <label className="checkbox-field"><input type="checkbox" checked={inCercaGiocatoriAllenatore} onChange={(e) => setInCercaGiocatoriAllenatore(e.target.checked)} /> In cerca di giocatori</label>
                 <div className="field">
                   <label className="field__label" htmlFor="profile-coach-license">Patentino</label>
                   <select id="profile-coach-license" value={patentino} onChange={(e) => setPatentino(e.target.value)} required>
@@ -347,6 +431,10 @@ export default function MioProfilo() {
                 </div>
                 <input type="text" placeholder="Stile di gioco" value={stileGioco} onChange={(e) => setStileGioco(e.target.value)} />
                 <LanguagePicker value={linguePartlate} onChange={setLinguePartlate} />
+                <div className="field">
+                  <label className="field__label">Carriera (una esperienza per riga)</label>
+                  <textarea value={carriera} onChange={(e) => setCarriera(e.target.value)} rows={4} />
+                </div>
               </>
             )}
 
@@ -354,6 +442,10 @@ export default function MioProfilo() {
               <>
                 <label className="checkbox-field"><input type="checkbox" checked={inCercaSquadra} onChange={(e) => setInCercaSquadra(e.target.checked)} /> In cerca di squadra</label>
                 <input type="text" placeholder="Società attuale" value={societaAttuale} onChange={(e) => setSocietaAttuale(e.target.value)} />
+                <div className="field">
+                  <label className="field__label">Carriera (una esperienza per riga)</label>
+                  <textarea value={carriera} onChange={(e) => setCarriera(e.target.value)} rows={4} />
+                </div>
               </>
             )}
 
@@ -363,6 +455,32 @@ export default function MioProfilo() {
                 <label className="checkbox-field"><input type="checkbox" checked={inCercaGiocatori} onChange={(e) => setInCercaGiocatori(e.target.checked)} /> In cerca di giocatori</label>
                 <input type="text" placeholder="Palmares" value={palmares} onChange={(e) => setPalmares(e.target.value)} />
                 <input type="text" placeholder="Categoria" value={categoria} onChange={(e) => setCategoria(e.target.value)} />
+                <select value={cercaPatentino} onChange={(e) => setCercaPatentino(e.target.value)}>
+                  <option value="">Patentino cercato (qualunque)</option>
+                  {COACH_LICENSE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </select>
+                <select value={cercaFormazione} onChange={(e) => setCercaFormazione(e.target.value)}>
+                  <option value="">Modulo cercato (qualunque)</option>
+                  {FORMATION_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </select>
+                <input type="text" placeholder="Lingua cercata (codice o nome)" value={cercaLingua} onChange={(e) => setCercaLingua(e.target.value)} />
+                <div className="field">
+                  <label className="field__label">Rosa della società</label>
+                  <div className="field-row">
+                    <input type="text" placeholder="ID profilo giocatore/allenatore" value={membroRosaId} onChange={(e) => setMembroRosaId(e.target.value)} />
+                    <select value={membroRosaRuolo} onChange={(e) => setMembroRosaRuolo(e.target.value)}>
+                      <option value="giocatore">Giocatore</option>
+                      <option value="allenatore">Allenatore</option>
+                    </select>
+                  </div>
+                  <button type="button" onClick={aggiungiRosa} className="btn btn--outline btn--sm">Aggiungi alla rosa</button>
+                  {[...rosaGiocatori.map((profile) => ({ ...profile, role: 'giocatore' })), ...rosaAllenatori.map((profile) => ({ ...profile, role: 'allenatore' }))].map((profile) => (
+                    <p key={profile.id}>
+                      {profile.nome} {profile.cognome || ''} ({profile.role})
+                      <button type="button" onClick={() => rimuoviRosa(profile.id)} className="btn btn--outline btn--sm" style={{ marginLeft: 8 }}>Rimuovi</button>
+                    </p>
+                  ))}
+                </div>
               </>
             )}
 

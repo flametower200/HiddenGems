@@ -9,6 +9,17 @@ import { avviaConversazione } from '../../../lib/chat';
 import { segui, smettiDiSeguire, aggiungiPreferito, rimuoviPreferito, controllaStato, getContatoriProfilo } from '../../../lib/social';
 import { caricaProfiloCompleto } from '../../../lib/profileHelpers';
 import { countryLabel } from '../../../lib/profileOptions';
+import { caricaRosaSocieta } from '../../../lib/clubRoster';
+
+function etaDaData(dataNascita) {
+  if (!dataNascita) return null;
+  const nascita = new Date(`${dataNascita}T00:00:00`);
+  if (Number.isNaN(nascita.getTime())) return null;
+  const oggi = new Date();
+  let eta = oggi.getFullYear() - nascita.getFullYear();
+  if (oggi.getMonth() < nascita.getMonth() || (oggi.getMonth() === nascita.getMonth() && oggi.getDate() < nascita.getDate())) eta -= 1;
+  return eta;
+}
 
 export default function ProfiloPubblico() {
   const { id } = useParams();
@@ -21,17 +32,26 @@ export default function ProfiloPubblico() {
   const [contatori, setContatori] = useState({ follower: 0, seguiti: 0, preferiti: 0 });
   const [stato, setStato] = useState({ seguito: false, preferito: false });
   const [inviandoRichiesta, setInviandoRichiesta] = useState(false);
+  const [squadraAttuale, setSquadraAttuale] = useState(null);
+  const [rosaGiocatori, setRosaGiocatori] = useState([]);
+  const [rosaAllenatori, setRosaAllenatori] = useState([]);
 
   const carica = useCallback(async () => {
     setLoading(true);
     try {
-      const [{ profilo: p, dettaglio: d }, c, s] = await Promise.all([
+      const [{ profilo: p, dettaglio: d, squadraAttuale: squadra }, c, s] = await Promise.all([
         caricaProfiloCompleto(id),
         getContatoriProfilo(id),
         controllaStato(id),
       ]);
       setProfilo(p);
       setDettaglio(d);
+      setSquadraAttuale(squadra);
+      if (p.tipo_account === 'societa') {
+        const roster = await caricaRosaSocieta(p.id);
+        setRosaGiocatori(roster.giocatori);
+        setRosaAllenatori(roster.allenatori);
+      }
       setContatori(c);
       setStato(s);
     } catch (err) {
@@ -102,6 +122,9 @@ export default function ProfiloPubblico() {
         <section className="profile-overview">
         <div className="profile-head">
           <UserAvatar src={profilo.foto_url} name={`${profilo.nome} ${profilo.cognome || ''}`} size={88} className="avatar" />
+          {squadraAttuale && (
+            <UserAvatar src={squadraAttuale.foto_url} name={squadraAttuale.nome} size={48} className="avatar" />
+          )}
           <div>
             <p className="page-eyebrow">PROFILO / SCOUTING</p>
             <h1>{profilo.nome} {profilo.cognome}</h1>
@@ -129,6 +152,12 @@ export default function ProfiloPubblico() {
         </section>
 
         <section className="card card--panel profile-details">
+          {profilo.tipo_account !== 'societa' && (
+            <>
+              <p><strong>Genere:</strong> {profilo.genere || '—'}</p>
+              <p><strong>Età:</strong> {etaDaData(dettaglio?.data_nascita) ?? '—'}</p>
+            </>
+          )}
           {profilo.tipo_account === 'giocatore' && dettaglio && (
             <>
               <p><strong>Ruolo:</strong> {dettaglio.ruolo_principale} {dettaglio.ruolo_secondario ? `/ ${dettaglio.ruolo_secondario}` : ''}</p>
@@ -153,7 +182,13 @@ export default function ProfiloPubblico() {
             <>
               <p><strong>Categoria:</strong> {dettaglio.categoria || '—'}</p>
               <p style={{ marginBottom: 0 }}><strong>Annata:</strong> {dettaglio.annata_squadra}</p>
+              {dettaglio.palmares && <p><strong>Palmares:</strong> {dettaglio.palmares}</p>}
+              {rosaAllenatori.length > 0 && <p><strong>Allenatori:</strong> {rosaAllenatori.map((profile) => `${profile.nome} ${profile.cognome || ''}`).join(', ')}</p>}
+              {rosaGiocatori.length > 0 && <p><strong>Giocatori:</strong> {rosaGiocatori.map((profile) => `${profile.nome} ${profile.cognome || ''}`).join(', ')}</p>}
             </>
+          )}
+          {Array.isArray(dettaglio?.carriera) && dettaglio.carriera.length > 0 && (
+            <p><strong>Carriera:</strong> {dettaglio.carriera.join(' · ')}</p>
           )}
           {profilo.bio && <p style={{ marginTop: 12, marginBottom: 0 }}>{profilo.bio}</p>}
         </section>

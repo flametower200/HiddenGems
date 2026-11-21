@@ -18,10 +18,12 @@ const PIEDI = ['destro', 'sinistro', 'ambidestro'];
 const ANNATE = ['U14', 'U15', 'U16', 'U17', 'U18', 'U19', 'Prima Squadra'];
 
 const FILTRI_VUOTI = {
-  ruolo: '', piede: '', genere: '', inCercaSquadra: undefined, statoContratto: '',
+  ruolo: '', ruoloSecondario: '', piede: '', genere: '', inCercaSquadra: undefined, statoContratto: '',
   nazione: '', lingua: '', etaMin: '', etaMax: '',
-  patentino: '', moduloPreferito: '',
-  categoria: '', annataSquadra: '', genereSquadra: '', inCercaAllenatori: undefined, inCercaGiocatori: undefined, palmares: '',
+  patentino: '', moduloPreferito: '', inCercaGiocatori: undefined, verificato: undefined,
+  regione: '', provincia: '',
+  categoria: '', annataSquadra: '', genereSquadra: '', inCercaAllenatori: undefined, palmares: '',
+  cercaPatentino: '', cercaFormazione: '', cercaLingua: '',
 };
 
 export default function Cerca() {
@@ -118,6 +120,10 @@ export default function Cerca() {
                   <option value="">Ruolo (tutti)</option>
                   {RUOLI.map((r) => <option key={r} value={r}>{r}</option>)}
                 </select>
+                <select value={filtri.ruoloSecondario} onChange={(e) => aggiorna('ruoloSecondario', e.target.value)}>
+                  <option value="">Secondario (tutti)</option>
+                  {RUOLI.map((r) => <option key={r} value={r}>{r}</option>)}
+                </select>
                 <select value={filtri.piede} onChange={(e) => aggiorna('piede', e.target.value)}>
                   <option value="">Piede (tutti)</option>
                   {PIEDI.map((p) => <option key={p} value={p}>{p}</option>)}
@@ -127,10 +133,22 @@ export default function Cerca() {
                 <input type="number" placeholder="Età min" value={filtri.etaMin} onChange={(e) => aggiorna('etaMin', e.target.value)} />
                 <input type="number" placeholder="Età max" value={filtri.etaMax} onChange={(e) => aggiorna('etaMax', e.target.value)} />
               </div>
+              <select value={filtri.genere} onChange={(e) => aggiorna('genere', e.target.value)}>
+                <option value="">Genere (tutti)</option>
+                <option value="uomo">Uomo</option>
+                <option value="donna">Donna</option>
+                <option value="altro">Altro</option>
+              </select>
               <select value={filtri.nazione} onChange={(e) => aggiorna('nazione', e.target.value)}>
                 <option value="">Tutte le nazioni</option>
                 {COUNTRY_OPTIONS.map((country) => <option key={country.value} value={country.value}>{country.label}</option>)}
               </select>
+              {filtri.nazione === 'IT' && (
+                <div className="field-row">
+                  <input type="text" placeholder="Regione" value={filtri.regione} onChange={(e) => aggiorna('regione', e.target.value)} />
+                  <input type="text" placeholder="Provincia" value={filtri.provincia} onChange={(e) => aggiorna('provincia', e.target.value)} />
+                </div>
+              )}
               <select value={filtri.statoContratto} onChange={(e) => aggiorna('statoContratto', e.target.value)}>
                 <option value="">Tutti gli stati contrattuali</option>
                 {CONTRACT_STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
@@ -148,6 +166,12 @@ export default function Cerca() {
 
           {tipoAccount === 'allenatore' && (
             <div className="subform">
+              <select value={filtri.genere} onChange={(e) => aggiorna('genere', e.target.value)}>
+                <option value="">Genere (tutti)</option>
+                <option value="uomo">Uomo</option>
+                <option value="donna">Donna</option>
+                <option value="altro">Altro</option>
+              </select>
               <select value={filtri.patentino} onChange={(e) => aggiorna('patentino', e.target.value)}>
                 <option value="">Tutti i patentini</option>
                 {COACH_LICENSE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
@@ -164,6 +188,12 @@ export default function Cerca() {
                 <option value="">Tutte le nazioni</option>
                 {COUNTRY_OPTIONS.map((country) => <option key={country.value} value={country.value}>{country.label}</option>)}
               </select>
+              {filtri.nazione === 'IT' && (
+                <div className="field-row">
+                  <input type="text" placeholder="Regione" value={filtri.regione} onChange={(e) => aggiorna('regione', e.target.value)} />
+                  <input type="text" placeholder="Provincia" value={filtri.provincia} onChange={(e) => aggiorna('provincia', e.target.value)} />
+                </div>
+              )}
               <select value={filtri.lingua} onChange={(e) => aggiorna('lingua', e.target.value)}>
                 <option value="">Tutte le lingue</option>
                 {LANGUAGE_OPTIONS.map((language) => <option key={language.value} value={language.value}>{language.label}</option>)}
@@ -171,6 +201,14 @@ export default function Cerca() {
               <label className="checkbox-field">
                 <input type="checkbox" checked={!!filtri.inCercaSquadra} onChange={(e) => aggiorna('inCercaSquadra', e.target.checked || undefined)} />
                 Solo chi è in cerca di squadra
+              </label>
+              <label className="checkbox-field">
+                <input type="checkbox" checked={!!filtri.inCercaGiocatori} onChange={(e) => aggiorna('inCercaGiocatori', e.target.checked || undefined)} />
+                Solo allenatori in cerca di giocatori
+              </label>
+              <label className="checkbox-field">
+                <input type="checkbox" checked={!!filtri.verificato} onChange={(e) => aggiorna('verificato', e.target.checked || undefined)} />
+                Solo account verificati
               </label>
             </div>
           )}
@@ -198,6 +236,24 @@ export default function Cerca() {
                 <option value="">Tutte le nazioni</option>
                 {COUNTRY_OPTIONS.map((country) => <option key={country.value} value={country.value}>{country.label}</option>)}
               </select>
+              {filtri.nazione === 'IT' && (
+                <div className="field-row">
+                  <input type="text" placeholder="Regione" value={filtri.regione} onChange={(e) => aggiorna('regione', e.target.value)} />
+                  <input type="text" placeholder="Provincia" value={filtri.provincia} onChange={(e) => aggiorna('provincia', e.target.value)} />
+                </div>
+              )}
+              <select value={filtri.cercaPatentino} onChange={(e) => aggiorna('cercaPatentino', e.target.value)}>
+                <option value="">Patentino cercato (tutti)</option>
+                {COACH_LICENSE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+              </select>
+              <select value={filtri.cercaFormazione} onChange={(e) => aggiorna('cercaFormazione', e.target.value)}>
+                <option value="">Modulo cercato (tutti)</option>
+                {FORMATION_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+              </select>
+              <select value={filtri.cercaLingua} onChange={(e) => aggiorna('cercaLingua', e.target.value)}>
+                <option value="">Lingua cercata (tutte)</option>
+                {LANGUAGE_OPTIONS.map((language) => <option key={language.value} value={language.value}>{language.label}</option>)}
+              </select>
               <label className="checkbox-field">
                 <input type="checkbox" checked={!!filtri.inCercaGiocatori} onChange={(e) => aggiorna('inCercaGiocatori', e.target.checked || undefined)} />
                 Solo società in cerca di giocatori
@@ -205,6 +261,10 @@ export default function Cerca() {
               <label className="checkbox-field">
                 <input type="checkbox" checked={!!filtri.inCercaAllenatori} onChange={(e) => aggiorna('inCercaAllenatori', e.target.checked || undefined)} />
                 Solo società in cerca di allenatori
+              </label>
+              <label className="checkbox-field">
+                <input type="checkbox" checked={!!filtri.verificato} onChange={(e) => aggiorna('verificato', e.target.checked || undefined)} />
+                Solo società verificata
               </label>
             </div>
           )}

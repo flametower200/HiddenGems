@@ -104,6 +104,8 @@ create table public.scout_details (
   provincia        text,
   carriera         jsonb not null default '[]'::jsonb,
   squadra_attuale_id uuid references public.profiles(id) on delete set null
+  , in_cerca_giocatori boolean not null default false
+  , verificato boolean not null default false
 );
 
 
@@ -125,6 +127,9 @@ create table public.club_details (
   regione          text,
   provincia        text,
   verificato       boolean not null default false
+  , cerca_patentino text
+  , cerca_formazione text
+  , cerca_lingua text
 );
 
 create index idx_club_categoria on public.club_details (categoria);
@@ -230,6 +235,73 @@ create table public.favorites (
   constraint chk_favorite_not_self check (user_id <> profile_id)
 );
 
+-- Rosa della società: permette ai club di collegare giocatori e allenatori
+-- ai propri profili, sincronizzando squadra_attuale_id nei relativi dettagli.
+create table public.club_roster (
+  club_id uuid not null references public.club_details(profile_id) on delete cascade,
+  member_id uuid not null references public.profiles(id) on delete cascade,
+  role text not null check (role in ('giocatore','allenatore')),
+  created_at timestamptz not null default now(),
+  primary key (club_id, member_id)
+);
+
+create index idx_club_roster_member on public.club_roster(member_id);
+
+create or replace function public.sync_club_roster()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+declare
+  v_role text;
+begin
+  v_role := case
+    when tg_op = 'DELETE' then old.role
+    else new.role
+  end;
+
+  if tg_op <> 'DELETE' then
+    if not exists (
+      select 1 from public.profiles
+      where id = new.member_id
+        and tipo_account = v_role
+    ) then
+      raise exception 'Il membro della rosa deve avere il ruolo indicato';
+    end if;
+  end if;
+
+  if tg_op = 'DELETE' then
+    if v_role = 'giocatore' then
+      update public.player_details set squadra_attuale_id = null
+      where profile_id = old.member_id and squadra_attuale_id = old.club_id;
+    elsif v_role = 'allenatore' then
+      update public.coach_details set squadra_attuale_id = null
+      where profile_id = old.member_id and squadra_attuale_id = old.club_id;
+    end if;
+    return old;
+  end if;
+
+  if v_role = 'giocatore' then
+    update public.player_details set squadra_attuale_id = new.club_id
+    where profile_id = new.member_id;
+  elsif v_role = 'allenatore' then
+    update public.coach_details set squadra_attuale_id = new.club_id
+    where profile_id = new.member_id;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_sync_club_roster_insert_update on public.club_roster;
+create trigger trg_sync_club_roster_insert_update
+  after insert or update on public.club_roster
+  for each row execute function public.sync_club_roster();
+
+drop trigger if exists trg_sync_club_roster_delete on public.club_roster;
+create trigger trg_sync_club_roster_delete
+  after delete on public.club_roster
+  for each row execute function public.sync_club_roster();
+
 
 -- ---------------------------------------------------------------------
 -- 9. VERIFICA EMAIL OBBLIGATORIA PER LE SOCIETÀ
@@ -248,6 +320,9 @@ as $$
 begin
   if new.email_confirmed_at is not null and (old.email_confirmed_at is null) then
     update public.club_details
+       set verificato = true
+     where profile_id = new.id;
+    update public.coach_details
        set verificato = true
      where profile_id = new.id;
   end if;
@@ -273,6 +348,7 @@ alter table public.chats          enable row level security;
 alter table public.messages       enable row level security;
 alter table public.follows        enable row level security;
 alter table public.favorites      enable row level security;
+alter table public.club_roster     enable row level security;
 
 -- PROFILES: profili pubblici in lettura per chi è autenticato, scrivibili solo dal proprietario
 create policy "profiles: lettura pubblica autenticati" on public.profiles
@@ -348,3 +424,10 @@ create policy "favorites: creo solo i miei preferiti" on public.favorites
   for insert with check (user_id = auth.uid());
 create policy "favorites: cancello solo i miei preferiti" on public.favorites
   for delete using (user_id = auth.uid());
+
+create policy "club_roster: lettura autenticati" on public.club_roster
+  for select using (auth.role() = 'authenticated');
+create policy "club_roster: il club gestisce la propria rosa" on public.club_roster
+  for all
+  using (club_id = auth.uid())
+  with check (club_id = auth.uid());

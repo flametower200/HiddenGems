@@ -98,3 +98,102 @@ $$;
 
 revoke all privileges on function public.consume_video_upload_slot() from public, anon;
 grant execute on function public.consume_video_upload_slot() to authenticated;
+
+-- Migrazioni additive per gli account e i filtri descritti nell'MVP.
+alter table public.coach_details
+  add column if not exists in_cerca_giocatori boolean not null default false,
+  add column if not exists verificato boolean not null default false;
+
+alter table public.club_details
+  add column if not exists cerca_patentino text,
+  add column if not exists cerca_formazione text,
+  add column if not exists cerca_lingua text;
+
+create or replace function public.sync_club_email_verification()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.email_confirmed_at is not null and (old.email_confirmed_at is null) then
+    update public.club_details set verificato = true where profile_id = new.id;
+    update public.coach_details set verificato = true where profile_id = new.id;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_sync_club_email_verification on auth.users;
+create trigger trg_sync_club_email_verification
+  after update of email_confirmed_at on auth.users
+  for each row execute function public.sync_club_email_verification();
+
+create table if not exists public.club_roster (
+  club_id uuid not null references public.club_details(profile_id) on delete cascade,
+  member_id uuid not null references public.profiles(id) on delete cascade,
+  role text not null check (role in ('giocatore','allenatore')),
+  created_at timestamptz not null default now(),
+  primary key (club_id, member_id)
+);
+
+revoke all privileges on table public.club_roster from public, anon, authenticated;
+grant select, insert, update, delete on table public.club_roster to authenticated;
+
+create index if not exists idx_club_roster_member on public.club_roster(member_id);
+alter table public.club_roster enable row level security;
+
+drop policy if exists "club_roster: lettura autenticati" on public.club_roster;
+create policy "club_roster: lettura autenticati" on public.club_roster
+  for select using (auth.role() = 'authenticated');
+drop policy if exists "club_roster: il club gestisce la propria rosa" on public.club_roster;
+create policy "club_roster: il club gestisce la propria rosa" on public.club_roster
+  for all
+  using (club_id = auth.uid())
+  with check (club_id = auth.uid());
+
+create or replace function public.sync_club_roster()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+declare
+  v_role text;
+begin
+  v_role := case when tg_op = 'DELETE' then old.role else new.role end;
+  if tg_op <> 'DELETE' then
+    if not exists (
+      select 1 from public.profiles
+      where id = new.member_id
+        and tipo_account = v_role
+    ) then
+      raise exception 'Il membro della rosa deve avere il ruolo indicato';
+    end if;
+  end if;
+  if tg_op = 'DELETE' then
+    if v_role = 'giocatore' then
+      update public.player_details set squadra_attuale_id = null
+      where profile_id = old.member_id and squadra_attuale_id = old.club_id;
+    elsif v_role = 'allenatore' then
+      update public.coach_details set squadra_attuale_id = null
+      where profile_id = old.member_id and squadra_attuale_id = old.club_id;
+    end if;
+    return old;
+  end if;
+  if v_role = 'giocatore' then
+    update public.player_details set squadra_attuale_id = new.club_id where profile_id = new.member_id;
+  elsif v_role = 'allenatore' then
+    update public.coach_details set squadra_attuale_id = new.club_id where profile_id = new.member_id;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_sync_club_roster_insert_update on public.club_roster;
+create trigger trg_sync_club_roster_insert_update
+  after insert or update on public.club_roster
+  for each row execute function public.sync_club_roster();
+drop trigger if exists trg_sync_club_roster_delete on public.club_roster;
+create trigger trg_sync_club_roster_delete
+  after delete on public.club_roster
+  for each row execute function public.sync_club_roster();
