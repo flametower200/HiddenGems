@@ -30,6 +30,7 @@ export default function Cerca() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [cercando, setCercando] = useState(false);
+  const [erroreRicerca, setErroreRicerca] = useState('');
   const [tipoAccount, setTipoAccount] = useState('giocatore');
   const [testoRicerca, setTestoRicerca] = useState('');
   const [filtri, setFiltri] = useState(FILTRI_VUOTI);
@@ -47,7 +48,22 @@ export default function Cerca() {
   const eseguiRicerca = async (e) => {
     e?.preventDefault();
     setCercando(true);
+    setErroreRicerca('');
     try {
+      const etaMinima = tipoAccount === 'giocatore' ? 14 : 18;
+      if (filtri.etaMin && Number(filtri.etaMin) < etaMinima) {
+        setErroreRicerca(`L’età minima da cercare per questo profilo è ${etaMinima} anni.`);
+        return;
+      }
+      if (filtri.etaMax && Number(filtri.etaMax) > 120) {
+        setErroreRicerca('L’età massima da cercare non può superare 120 anni.');
+        return;
+      }
+      if (filtri.etaMin && filtri.etaMax && Number(filtri.etaMin) > Number(filtri.etaMax)) {
+        setErroreRicerca('L’età minima non può superare l’età massima.');
+        return;
+      }
+
       const filtriPuliti = {};
       Object.entries(filtri).forEach(([k, v]) => {
         if (v !== '' && v !== undefined) filtriPuliti[k] = v;
@@ -58,9 +74,10 @@ export default function Cerca() {
       const { risultati: r } = await cerca(tipoAccount, { testoRicerca: testoRicerca || undefined, filtri: filtriPuliti });
       setRisultati(r);
     } catch (err) {
-      alert('Errore nella ricerca: ' + err.message);
+      setErroreRicerca('Errore nella ricerca: ' + err.message);
+    } finally {
+      setCercando(false);
     }
-    setCercando(false);
   };
 
   const cambiaTipo = (nuovoTipo) => {
@@ -87,6 +104,7 @@ export default function Cerca() {
         </div>
 
         <form onSubmit={eseguiRicerca} className="search-form">
+          {erroreRicerca && <p className="form-error" role="alert">{erroreRicerca}</p>}
           <div className="search-form__primary">
             <div className="field search-form__type">
               <label className="field__label" htmlFor="search-type">Cerco</label>
@@ -130,8 +148,8 @@ export default function Cerca() {
                 </select>
               </div>
               <div className="field-row">
-                <input type="number" placeholder="Età min" value={filtri.etaMin} onChange={(e) => aggiorna('etaMin', e.target.value)} />
-                <input type="number" placeholder="Età max" value={filtri.etaMax} onChange={(e) => aggiorna('etaMax', e.target.value)} />
+                <input type="number" min={14} max={120} inputMode="numeric" placeholder="Età min" value={filtri.etaMin} onChange={(e) => aggiorna('etaMin', e.target.value)} />
+                <input type="number" min={14} max={120} inputMode="numeric" placeholder="Età max" value={filtri.etaMax} onChange={(e) => aggiorna('etaMax', e.target.value)} />
               </div>
               <select value={filtri.genere} onChange={(e) => aggiorna('genere', e.target.value)}>
                 <option value="">Genere (tutti)</option>
@@ -181,8 +199,8 @@ export default function Cerca() {
                 {FORMATION_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
               </select>
               <div className="field-row">
-                <input type="number" placeholder="Età min" value={filtri.etaMin} onChange={(e) => aggiorna('etaMin', e.target.value)} />
-                <input type="number" placeholder="Età max" value={filtri.etaMax} onChange={(e) => aggiorna('etaMax', e.target.value)} />
+                <input type="number" min={18} max={120} inputMode="numeric" placeholder="Età min" value={filtri.etaMin} onChange={(e) => aggiorna('etaMin', e.target.value)} />
+                <input type="number" min={18} max={120} inputMode="numeric" placeholder="Età max" value={filtri.etaMax} onChange={(e) => aggiorna('etaMax', e.target.value)} />
               </div>
               <select value={filtri.nazione} onChange={(e) => aggiorna('nazione', e.target.value)}>
                 <option value="">Tutte le nazioni</option>
@@ -214,12 +232,7 @@ export default function Cerca() {
           )}
 
           {tipoAccount === 'scout' && (
-            <div className="subform">
-              <select value={filtri.nazione} onChange={(e) => aggiorna('nazione', e.target.value)}>
-                <option value="">Tutte le nazioni</option>
-                {COUNTRY_OPTIONS.map((country) => <option key={country.value} value={country.value}>{country.label}</option>)}
-              </select>
-            </div>
+            <p className="search-filters__note">Gli scout si cercano esclusivamente per nome e cognome.</p>
           )}
 
           {tipoAccount === 'societa' && (

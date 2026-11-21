@@ -1,13 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { supabase } from '../lib/supabase';
 import { registraUtente, accedi } from '../lib/registration';
-import { caricaListaProfili } from '../lib/profileHelpers';
-import AppHeader from '../components/AppHeader';
 import LanguagePicker from '../components/LanguagePicker';
-import ProfileCard from '../components/ProfileCard';
+import Feed from './feed/page';
 import {
   COUNTRY_OPTIONS,
   COACH_LICENSE_OPTIONS,
@@ -22,18 +19,11 @@ const PIEDI = [
   { value: 'ambidestro', label: 'Ambidestro' },
 ];
 const ANNATE = ['U14', 'U15', 'U16', 'U17', 'U18', 'U19', 'Prima Squadra'];
-const ETICHETTE_FILTRO = {
-  tutti: 'Profili nella rete',
-  giocatore: 'Giocatori',
-  allenatore: 'Allenatori',
-  scout: 'Scout',
-  societa: 'Società',
-};
-
 export default function Home() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState('login');
+  const [formError, setFormError] = useState('');
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -59,9 +49,6 @@ export default function Home() {
   const [annataSquadra, setAnnataSquadra] = useState('Prima Squadra');
   const [categoria, setCategoria] = useState('');
 
-  const [profili, setProfili] = useState([]);
-  const [filtroRuolo, setFiltroRuolo] = useState('tutti');
-
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -74,18 +61,10 @@ export default function Home() {
     return () => authListener.subscription.unsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (!session) return undefined;
-    let attivo = true;
-    caricaListaProfili(filtroRuolo)
-      .then((data) => { if (attivo) setProfili(data); })
-      .catch((error) => console.error('Errore caricamento profili:', error.message));
-    return () => { attivo = false; };
-  }, [session, filtroRuolo]);
-
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setFormError('');
 
     let dettagli = {};
     if (tipoAccount === 'giocatore') {
@@ -135,7 +114,7 @@ export default function Home() {
         setMode('login');
       }
     } catch (err) {
-      alert('Errore registrazione: ' + err.message);
+      setFormError(err.message);
     }
     setLoading(false);
   };
@@ -143,18 +122,20 @@ export default function Home() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setFormError('');
     try {
       await accedi(email, password);
     } catch (err) {
-      alert('Errore login: ' + err.message);
+      setFormError(err.message);
     }
     setLoading(false);
   };
 
   if (loading) return <div className="state-message">Caricamento in corso...</div>;
 
-  if (!session) {
-    return (
+  if (session) return <Feed />;
+
+  return (
       <main className="page auth-shell">
         <div className="auth-card">
             <div className="auth-brand">
@@ -164,16 +145,17 @@ export default function Home() {
             </div>
 
             <div className="auth-toggle">
-              <button type="button" className={mode === 'login' ? 'is-active' : ''} onClick={() => setMode('login')}>Accedi</button>
-              <button type="button" className={mode === 'register' ? 'is-active' : ''} onClick={() => setMode('register')}>Registrati</button>
+              <button type="button" className={mode === 'login' ? 'is-active' : ''} onClick={() => { setMode('login'); setFormError(''); }}>Accedi</button>
+              <button type="button" className={mode === 'register' ? 'is-active' : ''} onClick={() => { setMode('register'); setFormError(''); }}>Registrati</button>
             </div>
 
+            {formError && <p className="form-error" role="alert">{formError}</p>}
             <form onSubmit={mode === 'login' ? handleLogin : handleRegister} className="auth-form">
               {mode === 'register' && (
                 <>
                   <div className="field">
                     <label className="field__label">Tipo account</label>
-                    <select value={tipoAccount} onChange={(e) => setTipoAccount(e.target.value)}>
+                    <select value={tipoAccount} onChange={(e) => { setTipoAccount(e.target.value); setDataNascita(''); setFormError(''); }}>
                       <option value="giocatore">Giocatore</option>
                       <option value="allenatore">Allenatore</option>
                       <option value="scout">Scout</option>
@@ -181,18 +163,33 @@ export default function Home() {
                     </select>
                   </div>
 
-                  <input type="text" placeholder={tipoAccount === 'societa' ? 'Nome società' : 'Nome'} value={nome} onChange={(e) => setNome(e.target.value)} required />
+                  <input type="text" autoComplete="given-name" maxLength={100} placeholder={tipoAccount === 'societa' ? 'Nome società' : 'Nome'} value={nome} onChange={(e) => setNome(e.target.value)} required />
 
                   {tipoAccount !== 'societa' && (
-                    <input type="text" placeholder="Cognome" value={cognome} onChange={(e) => setCognome(e.target.value)} required />
+                    <input type="text" autoComplete="family-name" maxLength={100} placeholder="Cognome" value={cognome} onChange={(e) => setCognome(e.target.value)} required />
                   )}
                   {tipoAccount !== 'societa' && (
-                    <input type="text" placeholder="Genere" value={genere} onChange={(e) => setGenere(e.target.value)} />
+                    <select value={genere} onChange={(e) => setGenere(e.target.value)} required aria-label="Genere">
+                      <option value="">Seleziona il genere…</option>
+                      <option value="uomo">Uomo</option>
+                      <option value="donna">Donna</option>
+                      <option value="altro">Altro</option>
+                    </select>
                   )}
                   {tipoAccount !== 'societa' && (
                     <div className="field">
                       <label className="field__label">Data di nascita</label>
-                      <input type="date" value={dataNascita} onChange={(e) => setDataNascita(e.target.value)} required />
+                      <input
+                        type="date"
+                        value={dataNascita}
+                        max={(() => {
+                          const limite = new Date();
+                          limite.setFullYear(limite.getFullYear() - (tipoAccount === 'giocatore' ? 14 : 18));
+                          return limite.toISOString().slice(0, 10);
+                        })()}
+                        onChange={(e) => setDataNascita(e.target.value)}
+                        required
+                      />
                     </div>
                   )}
                   <div className="field">
@@ -274,62 +271,17 @@ export default function Home() {
                 </>
               )}
 
-              <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-              <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              <input type="email" autoComplete="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              <input type="password" autoComplete={mode === 'login' ? 'current-password' : 'new-password'} minLength={8} placeholder="Password (almeno 8 caratteri)" value={password} onChange={(e) => setPassword(e.target.value)} required />
               {mode === 'register' && (
-                <input type="password" placeholder="Conferma password" value={confermaPassword} onChange={(e) => setConfermaPassword(e.target.value)} required />
+                <input type="password" autoComplete="new-password" minLength={8} placeholder="Conferma password" value={confermaPassword} onChange={(e) => setConfermaPassword(e.target.value)} required />
               )}
 
-              <button type="submit" className="btn btn--primary btn--block">
-                {mode === 'login' ? 'Accedi' : 'Crea account'}
+              <button type="submit" disabled={loading} className="btn btn--primary btn--block">
+                {loading ? 'Attendi…' : mode === 'login' ? 'Accedi' : 'Crea account'}
               </button>
             </form>
         </div>
       </main>
-    );
-  }
-
-  return (
-    <main className="page">
-      <AppHeader session={session} theme="bacheca" />
-      <div className="container container--wide directory-screen">
-        <div className="directory-heading">
-          <div>
-            <p className="page-eyebrow">SCOUTING / NETWORK</p>
-            <h1>Bacheca scouting</h1>
-            <p>Talenti, staff e società. Un punto di partenza per la prossima opportunità.</p>
-          </div>
-          <label className="directory-filter">
-            <span>Esplora per ruolo</span>
-            <select value={filtroRuolo} onChange={(e) => setFiltroRuolo(e.target.value)}>
-            <option value="tutti">Tutti i profili</option>
-            <option value="giocatore">Giocatori</option>
-            <option value="allenatore">Allenatori</option>
-            <option value="scout">Scout</option>
-            <option value="societa">Società</option>
-            </select>
-          </label>
-        </div>
-
-        <div className="directory-results-heading">
-          <h2>{ETICHETTE_FILTRO[filtroRuolo] || ETICHETTE_FILTRO.tutti}</h2>
-          <span>{profili.length} {profili.length === 1 ? 'profilo' : 'profili'}</span>
-        </div>
-
-        <div className="talent-grid">
-          {profili.length === 0 ? (
-            <div className="directory-empty">
-              <span className="directory-empty__mark" aria-hidden="true">HG</span>
-              <h2>Nessun profilo ancora</h2>
-              <p>Prova un altro filtro o torna più tardi per scoprire nuovi membri della rete.</p>
-              {filtroRuolo !== 'tutti' && <button type="button" className="btn btn--outline" onClick={() => setFiltroRuolo('tutti')}>Mostra tutti i profili</button>}
-              {filtroRuolo === 'tutti' && <Link className="btn btn--secondary" href="/cerca">Cerca nella rete</Link>}
-            </div>
-          ) : (
-            profili.map((profile) => <ProfileCard key={profile.id} profile={profile} currentUserId={session.user.id} />)
-          )}
-        </div>
-      </div>
-    </main>
   );
 }

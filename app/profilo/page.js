@@ -13,6 +13,7 @@ import {
   COACH_LICENSE_OPTIONS,
   CONTRACT_STATUS_OPTIONS,
   FORMATION_OPTIONS,
+  LANGUAGE_OPTIONS,
   canonicalContractStatus,
   countryLabel,
   normalizeCountry,
@@ -78,6 +79,7 @@ export default function MioProfilo() {
   const [cercaLingua, setCercaLingua] = useState('');
   const [rosaGiocatori, setRosaGiocatori] = useState([]);
   const [rosaAllenatori, setRosaAllenatori] = useState([]);
+  const [profiliDisponibili, setProfiliDisponibili] = useState([]);
   const [membroRosaId, setMembroRosaId] = useState('');
   const [membroRosaRuolo, setMembroRosaRuolo] = useState('giocatore');
   const [squadraAttuale, setSquadraAttuale] = useState(null);
@@ -128,6 +130,14 @@ export default function MioProfilo() {
         const roster = await caricaRosaSocieta(p.id);
         setRosaGiocatori(roster.giocatori);
         setRosaAllenatori(roster.allenatori);
+        const { data: membri, error: erroreMembri } = await supabase
+          .from('profiles')
+          .select('id,nome,cognome,tipo_account')
+          .in('tipo_account', ['giocatore', 'allenatore'])
+          .neq('id', userId)
+          .order('nome');
+        if (erroreMembri) throw erroreMembri;
+        setProfiliDisponibili(membri || []);
       }
 
       setContatori(c);
@@ -463,12 +473,24 @@ export default function MioProfilo() {
                   <option value="">Modulo cercato (qualunque)</option>
                   {FORMATION_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                 </select>
-                <input type="text" placeholder="Lingua cercata (codice o nome)" value={cercaLingua} onChange={(e) => setCercaLingua(e.target.value)} />
+                <select value={cercaLingua} onChange={(e) => setCercaLingua(e.target.value)}>
+                  <option value="">Lingua cercata (qualunque)</option>
+                  {LANGUAGE_OPTIONS.map((language) => <option key={language.value} value={language.value}>{language.label}</option>)}
+                </select>
                 <div className="field">
                   <label className="field__label">Rosa della società</label>
                   <div className="field-row">
-                    <input type="text" placeholder="ID profilo giocatore/allenatore" value={membroRosaId} onChange={(e) => setMembroRosaId(e.target.value)} />
-                    <select value={membroRosaRuolo} onChange={(e) => setMembroRosaRuolo(e.target.value)}>
+                    <select value={membroRosaId} onChange={(e) => setMembroRosaId(e.target.value)}>
+                      <option value="">Seleziona un profilo</option>
+                      {profiliDisponibili
+                        .filter((member) => member.tipo_account === membroRosaRuolo)
+                        .map((member) => (
+                          <option key={member.id} value={member.id}>
+                            {[member.nome, member.cognome].filter(Boolean).join(' ')}
+                          </option>
+                        ))}
+                    </select>
+                    <select value={membroRosaRuolo} onChange={(e) => { setMembroRosaRuolo(e.target.value); setMembroRosaId(''); }}>
                       <option value="giocatore">Giocatore</option>
                       <option value="allenatore">Allenatore</option>
                     </select>

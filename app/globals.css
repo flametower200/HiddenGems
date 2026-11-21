@@ -218,7 +218,7 @@ a { color: var(--color-pitch-light); text-decoration: none; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
@@ -227,6 +227,25 @@ a { color: var(--color-pitch-light); text-decoration: none; }
   flex-direction: column;
   gap: 3px;
 }
+
+.app-header__publish {
+  display: inline-grid;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,0.28);
+  border-radius: 15px;
+  background: rgba(255,255,255,0.16);
+  color: #fff;
+  font-size: 2rem;
+  font-weight: 400;
+  line-height: 1;
+  transition: transform 150ms ease, background 150ms ease;
+}
+
+.app-header__publish:hover { background: rgba(255,255,255,0.25); transform: scale(1.04); }
+.app-header__publish:active { transform: scale(0.94); }
 
 .app-header__brand {
   font-family: var(--font-display);
@@ -252,8 +271,10 @@ a { color: var(--color-pitch-light); text-decoration: none; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
+  min-width: 44px;
   height: 44px;
+  gap: 8px;
+  padding: 0 12px;
   color: rgba(255, 255, 255, 0.9);
   text-decoration: none;
   border-radius: 14px;
@@ -262,6 +283,9 @@ a { color: var(--color-pitch-light); text-decoration: none; }
   transition: transform 0.15s ease, background 0.2s ease, box-shadow 0.2s ease;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
 }
+
+.nav-link__label { font-size: 0.78rem; font-weight: 700; }
+.nav-link__label--short { display: none; }
 
 .nav-link:hover {
   transform: translateY(-1px);
@@ -851,34 +875,6 @@ textarea { resize: vertical; font-family: var(--font-body); }
   font-size: 0.93rem;
 }
 
-.feed-heading__publish {
-  display: inline-flex;
-  min-height: 46px;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  flex: 0 0 auto;
-  padding: 0 18px;
-  border-radius: 14px;
-  background: #c53235;
-  color: #fff;
-  font-size: 0.9rem;
-  font-weight: 750;
-  box-shadow: 0 8px 18px rgba(197, 50, 53, 0.2);
-  transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease;
-}
-
-.feed-heading__publish:hover {
-  transform: translateY(-1px);
-  background: #a9252b;
-  box-shadow: 0 10px 22px rgba(197, 50, 53, 0.24);
-}
-
-.feed-heading__publish span {
-  font-size: 1.35rem;
-  line-height: 1;
-}
-
 .feed-list {
   display: grid;
   width: min(100%, 680px);
@@ -1146,15 +1142,19 @@ textarea { resize: vertical; font-family: var(--font-body); }
   .app-header__nav {
     width: 100%;
     justify-content: center;
-    gap: 5px;
+    gap: 3px;
     padding: 4px 7px;
   }
 
-  .app-header { padding: 11px 14px 9px; }
-  .app-header__inner { gap: 7px; }
+  .app-header { padding: 10px 12px 8px; }
+  .app-header__inner { gap: 6px; }
+  .app-header__identity { flex: 1; }
   .app-header__brand { font-size: 1.16rem; }
-  .nav-link { width: 40px; height: 40px; border-radius: 12px; }
-  .nav-link__icon, .nav-link__icon svg { width: 22px; height: 22px; }
+  .app-header__publish { width: 46px; height: 46px; flex-basis: 46px; }
+  .nav-link { flex: 1; min-width: 0; height: 54px; flex-direction: column; gap: 2px; padding: 3px 2px; border-radius: 12px; }
+  .nav-link__icon, .nav-link__icon svg { width: 21px; height: 21px; }
+  .nav-link__label { display: none; }
+  .nav-link__label--short { display: block; font-size: 0.72rem; font-weight: 700; line-height: 1.1; }
 
   .auth-shell {
     padding: 20px 12px;
@@ -1205,8 +1205,6 @@ textarea { resize: vertical; font-family: var(--font-body); }
   .feed-heading { flex-direction: column; align-items: stretch; gap: 14px; padding-bottom: 18px; margin-bottom: 16px; }
   .feed-heading h1 { font-size: 1.55rem; }
   .feed-heading__subtitle { max-width: 230px; font-size: 0.82rem; }
-  .feed-heading__publish { min-height: 42px; align-self: flex-start; gap: 5px; padding: 0 11px; border-radius: 12px; font-size: 0.76rem; white-space: nowrap; }
-  .feed-heading__publish span { font-size: 1.15rem; }
   .feed-list { gap: 15px; }
   .feed-post { border-radius: 15px; }
   .feed-post__header { min-height: 66px; padding: 11px 12px; }

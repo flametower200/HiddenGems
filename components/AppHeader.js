@@ -5,30 +5,20 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createPortal } from 'react-dom';
 
-const SECTION_PATHS = ['/', '/feed', '/cerca', '/messaggi', '/profilo', '/impostazioni'];
+const SECTION_PATHS = ['/', '/cerca', '/messaggi', '/profilo', '/impostazioni'];
 
 function getSectionIndex(pathname) {
-  if (pathname === '/') return 0;
-  if (pathname.startsWith('/feed')) return 1;
-  if (pathname.startsWith('/cerca')) return 2;
-  if (pathname.startsWith('/messaggi')) return 3;
-  if (pathname.startsWith('/profilo')) return 4;
-  if (pathname.startsWith('/impostazioni')) return 5;
+  if (pathname === '/' || pathname.startsWith('/feed')) return 0;
+  if (pathname.startsWith('/cerca')) return 1;
+  if (pathname.startsWith('/messaggi')) return 2;
+  if (pathname.startsWith('/profilo')) return 3;
+  if (pathname.startsWith('/impostazioni')) return 4;
   return -1;
 }
 
 function startsInProtectedControl(target) {
   return target instanceof Element && Boolean(
     target.closest('input, textarea, select, [contenteditable="true"], [data-horizontal-scroll]'),
-  );
-}
-
-function IconHome() {
-  return (
-    <svg viewBox="0 0 64 64" aria-hidden="true">
-      <path d="M10 30L32 12L54 30V50C54 52.2 52.2 54 50 54H14C11.8 54 10 52.2 10 50V30Z" fill="none" stroke="currentColor" strokeWidth="4" strokeLinejoin="round" />
-      <path d="M24 54V36H40V54" fill="none" stroke="currentColor" strokeWidth="4" strokeLinejoin="round" />
-    </svg>
   );
 }
 
@@ -81,15 +71,14 @@ function IconSettings() {
 }
 
 const NAV_ITEMS = [
-  { href: '/', label: 'Bacheca', icon: <IconHome />, title: 'Bacheca', theme: 'bacheca' },
-  { href: '/feed', label: 'Feed', icon: <IconFeed />, title: 'Feed', theme: 'feed' },
-  { href: '/cerca', label: 'Cerca', icon: <IconSearch />, title: 'Cerca', theme: 'cerca' },
-  { href: '/messaggi', label: 'Messaggi', icon: <IconMessages />, title: 'Messaggi', theme: 'messaggi' },
-  { href: '/profilo', label: 'Profilo', icon: <IconProfile />, title: 'Profilo', theme: 'profilo' },
-  { href: '/impostazioni', label: 'Impostazioni', icon: <IconSettings />, title: 'Impostazioni', theme: 'impostazioni' },
+  { href: '/', label: 'Feed', shortLabel: 'Feed', icon: <IconFeed />, title: 'Feed', theme: 'feed' },
+  { href: '/cerca', label: 'Cerca', shortLabel: 'Cerca', icon: <IconSearch />, title: 'Cerca', theme: 'cerca' },
+  { href: '/messaggi', label: 'Messaggi', shortLabel: 'Chat', icon: <IconMessages />, title: 'Messaggi', theme: 'messaggi' },
+  { href: '/profilo', label: 'Profilo', shortLabel: 'Profilo', icon: <IconProfile />, title: 'Profilo', theme: 'profilo' },
+  { href: '/impostazioni', label: 'Impostazioni', shortLabel: 'Impost.', icon: <IconSettings />, title: 'Impostazioni', theme: 'impostazioni' },
 ];
 
-export default function AppHeader({ session, theme = 'bacheca' }) {
+export default function AppHeader({ session, theme = 'bacheca', showPublish = false }) {
   const router = useRouter();
   const pathname = usePathname();
   const touchStart = useRef(null);
@@ -283,9 +272,17 @@ export default function AppHeader({ session, theme = 'bacheca' }) {
           <p className="app-header__brand">HiddenGems</p>
         </div>
 
+        {showPublish && (
+          <Link href="/feed/carica" className="app-header__publish" aria-label="Pubblica un video" title="Pubblica un video">
+            <span aria-hidden="true">+</span>
+          </Link>
+        )}
+
         <nav className="app-header__nav" aria-label="Navigazione principale">
             {NAV_ITEMS.map((item) => {
-              const active = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+              const active = item.href === '/'
+                ? pathname === '/' || pathname.startsWith('/feed')
+                : pathname.startsWith(item.href);
               return (
             <Link
               key={item.href}
@@ -296,6 +293,8 @@ export default function AppHeader({ session, theme = 'bacheca' }) {
                 aria-current={active ? 'page' : undefined}
             >
               <span className="nav-link__icon" aria-hidden="true">{item.icon}</span>
+                <span className="nav-link__label">{item.label}</span>
+                <span className="nav-link__label--short" aria-hidden="true">{item.shortLabel}</span>
             </Link>
               );
             })}

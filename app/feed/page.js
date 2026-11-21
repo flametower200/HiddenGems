@@ -190,11 +190,21 @@ export default function Feed() {
   }, []);
 
   if (loading) return <div className="state-message">Caricamento...</div>;
-  if (!session) return <div className="state-message">Devi accedere per vedere questa pagina.</div>;
+  if (!session) {
+    return (
+      <main className="page">
+        <div className="state-message">
+          <h1>Feed HiddenGems</h1>
+          <p>Accedi per scoprire video e talenti della community.</p>
+          <Link className="btn btn--primary" href="/">Accedi o registrati</Link>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="page">
-      <AppHeader session={session} theme="feed" />
+      <AppHeader session={session} theme="feed" showPublish={tipoAccount === 'giocatore'} />
       <div className="container container--wide feed-container">
         <div className="feed-heading">
           <div>
@@ -202,9 +212,6 @@ export default function Feed() {
             <h1>Feed giocatori</h1>
             <p className="feed-heading__subtitle">Azioni, tecnica e talento direttamente dal campo.</p>
           </div>
-          {tipoAccount === 'giocatore' && (
-            <Link href="/feed/carica" className="feed-heading__publish"><span aria-hidden="true">+</span> Pubblica video</Link>
-          )}
         </div>
 
         <div className="feed-list">
@@ -213,7 +220,6 @@ export default function Feed() {
               <span className="feed-empty__mark" aria-hidden="true">HG</span>
               <h2>Il campo è libero</h2>
               <p>Non ci sono ancora video nel feed. I nuovi contenuti appariranno qui.</p>
-              {tipoAccount === 'giocatore' && <Link href="/feed/carica" className="feed-heading__publish">Pubblica il primo video</Link>}
             </div>
           ) : (
             post.map((p) => <PostCard key={p.id} post={p} sessionUserId={session.user.id} onDelete={(id) => setPost((current) => current.filter((item) => item.id !== id))} />)

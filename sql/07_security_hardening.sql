@@ -155,6 +155,7 @@ create policy "club_roster: il club gestisce la propria rosa" on public.club_ros
 create or replace function public.sync_club_roster()
 returns trigger
 language plpgsql
+security definer
 set search_path = public
 as $$
 declare

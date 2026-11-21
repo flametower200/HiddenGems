@@ -250,6 +250,7 @@ create index idx_club_roster_member on public.club_roster(member_id);
 create or replace function public.sync_club_roster()
 returns trigger
 language plpgsql
+security definer
 set search_path = public
 as $$
 declare
