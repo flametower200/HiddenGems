@@ -439,6 +439,9 @@ textarea { resize: vertical; font-family: var(--font-body); }
 
 .field-row { display: flex; gap: 10px; }
 .field-row > * { flex: 1; }
+.italian-location-fields, .player-position-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.italian-location-fields .field, .player-position-fields .field { min-width: 0; margin-bottom: 0; }
+.player-position-fields .field:last-child:nth-child(3) { grid-column: 1 / -1; }
 
 .subform {
   background: rgba(13, 50, 41, 0.04);
@@ -794,6 +797,21 @@ textarea { resize: vertical; font-family: var(--font-body); }
 .profile-details { display: grid; gap: 0; padding: 20px 22px; border: 1px solid var(--color-line); border-radius: 16px; background: #fff; box-shadow: 0 5px 18px rgba(18, 23, 28, 0.035); }
 .profile-details p { margin: 0; padding: 10px 0; border-bottom: 1px solid rgba(18, 23, 28, 0.055); }
 .profile-details p:last-child { border-bottom: 0; }
+.career-editor { display: grid; gap: 12px; }
+.career-editor__heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.career-editor__heading h4 { margin: 0 0 3px; }
+.career-editor__heading p { margin: 0; color: var(--color-muted); font-size: 0.85rem; }
+.career-editor__add { display: grid; width: 42px; height: 42px; flex: 0 0 auto; place-items: center; border: 0; border-radius: 50%; background: var(--color-pitch); color: #fff; cursor: pointer; font-size: 1.65rem; line-height: 1; }
+.career-editor__experience { display: grid; gap: 10px; min-width: 0; margin: 0; padding: 14px; border: 1px solid var(--color-line); border-radius: 14px; }
+.career-editor__experience legend { padding: 0 5px; font-size: 0.82rem; font-weight: 700; }
+.career-editor__experience label { display: grid; gap: 5px; font-size: 0.82rem; font-weight: 700; }
+.career-editor__experience label small { color: var(--color-muted); font-weight: 400; }
+.career-editor__dates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.career-editor__remove { justify-self: start; padding: 4px 0; border: 0; background: transparent; color: var(--color-danger); cursor: pointer; font: inherit; font-size: 0.82rem; }
+.profile-career { padding: 12px 0; border-bottom: 1px solid rgba(18, 23, 28, 0.055); }
+.profile-career h3 { margin: 0 0 6px; font-size: 1rem; }
+.profile-details .profile-career p { padding: 5px 0; border: 0; }
+.profile-career span { color: var(--color-muted); }
 .profile-edit-button { margin-top: 15px; }
 .profile-editor { display: flex; flex-direction: column; gap: 13px; border: 1px solid var(--color-line); border-radius: 16px; background: #fff; }
 .settings-screen { max-width: 760px; padding-top: 32px; }
@@ -1135,6 +1153,10 @@ textarea { resize: vertical; font-family: var(--font-body); }
 .language-chip button:hover { background: #c9dfd3; }
 
 @media (max-width: 640px) {
+  .career-editor__dates { grid-template-columns: minmax(0, 1fr); }
+  .italian-location-fields, .player-position-fields { grid-template-columns: minmax(0, 1fr); }
+  .player-position-fields .field:last-child:nth-child(3) { grid-column: auto; }
+
   .section-drag-preview {
     display: block;
   }

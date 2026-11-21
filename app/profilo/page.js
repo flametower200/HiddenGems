@@ -4,19 +4,19 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import AppHeader from '../../components/AppHeader';
 import UserAvatar from '../../components/UserAvatar';
+import CareerEditor from '../../components/CareerEditor';
+import ItalianLocationFields from '../../components/ItalianLocationFields';
+import PlayerPositionFields from '../../components/PlayerPositionFields';
 import { getContatoriProfilo } from '../../lib/social';
 import { caricaProfiloCompleto, invalidaCacheProfili } from '../../lib/profileHelpers';
 import LanguagePicker from '../../components/LanguagePicker';
 import { caricaRosaSocieta, aggiungiMembroRosa, rimuoviMembroRosa } from '../../lib/clubRoster';
 import {
-  COUNTRY_OPTIONS,
   COACH_LICENSE_OPTIONS,
   CONTRACT_STATUS_OPTIONS,
   FORMATION_OPTIONS,
   LANGUAGE_OPTIONS,
   canonicalContractStatus,
-  countryLabel,
-  normalizeCountry,
   normalizeLanguageList,
   withLegacyOption,
 } from '../../lib/profileOptions';
@@ -57,6 +57,7 @@ export default function MioProfilo() {
   const [inCercaSquadra, setInCercaSquadra] = useState(false);
   const [inCercaAllenatori, setInCercaAllenatori] = useState(false);
   const [inCercaGiocatori, setInCercaGiocatori] = useState(false);
+  const [ruoloPrincipale, setRuoloPrincipale] = useState('');
   const [ruoloSecondario, setRuoloSecondario] = useState('');
   const [piede, setPiede] = useState('destro');
   const [altezza, setAltezza] = useState('');
@@ -64,7 +65,6 @@ export default function MioProfilo() {
   const [statoContratto, setStatoContratto] = useState('');
   const [patentino, setPatentino] = useState('');
   const [moduloPreferito, setModuloPreferito] = useState('');
-  const [nazioneProfilo, setNazioneProfilo] = useState('');
   const [regioneProfilo, setRegioneProfilo] = useState('');
   const [provinciaProfilo, setProvinciaProfilo] = useState('');
   const [stileGioco, setStileGioco] = useState('');
@@ -72,7 +72,8 @@ export default function MioProfilo() {
   const [palmares, setPalmares] = useState('');
   const [categoria, setCategoria] = useState('');
   const [linguePartlate, setLinguePartlate] = useState([]);
-  const [carriera, setCarriera] = useState('');
+  const [carriera, setCarriera] = useState([]);
+  const [erroreCarriera, setErroreCarriera] = useState('');
   const [inCercaGiocatoriAllenatore, setInCercaGiocatoriAllenatore] = useState(false);
   const [cercaPatentino, setCercaPatentino] = useState('');
   const [cercaFormazione, setCercaFormazione] = useState('');
@@ -97,12 +98,23 @@ export default function MioProfilo() {
 
       setBio(p.bio || '');
       setFotoUrl(p.foto_url || '');
-      setNazioneProfilo(normalizeCountry(d?.nazione));
       setRegioneProfilo(d?.regione || '');
       setProvinciaProfilo(d?.provincia || '');
-      setCarriera(Array.isArray(d?.carriera) ? d.carriera.join('\n') : '');
+      setCarriera((Array.isArray(d?.carriera) ? d.carriera : [])
+        .filter((experience) => typeof experience === 'string' || (experience && typeof experience === 'object'))
+        .map((experience, index) => (
+        typeof experience === 'string'
+          ? { id: `legacy-${index}-${Date.now()}`, title: experience, startDate: '', endDate: '' }
+          : {
+            id: `saved-${index}-${Date.now()}`,
+            title: experience.title || '',
+            startDate: experience.startDate || '',
+            endDate: experience.endDate || '',
+          }
+        )));
       if (p.tipo_account === 'giocatore' && d) {
         setInCercaSquadra(!!d.in_cerca_squadra);
+        setRuoloPrincipale(d.ruolo_principale || '');
         setRuoloSecondario(d.ruolo_secondario || '');
         setPiede(d.piede || 'destro');
         setAltezza(d.altezza ?? '');
@@ -209,10 +221,32 @@ export default function MioProfilo() {
 
   const salva = async () => {
     setSalvataggio(true);
+    setErroreCarriera('');
+    if (!regioneProfilo || !provinciaProfilo) {
+      setSalvataggio(false);
+      alert('Seleziona la regione e la provincia del profilo.');
+      return;
+    }
+    if (profilo.tipo_account === 'giocatore' && !ruoloPrincipale) {
+      setSalvataggio(false);
+      alert('Seleziona il ruolo specifico del giocatore.');
+      return;
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       setSalvataggio(false);
       alert('Devi effettuare nuovamente l\'accesso.');
+      return;
+    }
+    const esperienzeIncomplete = carriera.some((experience) => (
+      !experience.title.trim()
+      || experience.title.length > 30
+      || !experience.startDate
+      || (experience.endDate && experience.endDate < experience.startDate)
+    ));
+    if (esperienzeIncomplete) {
+      setErroreCarriera('Completa ogni esperienza: inserisci una descrizione entro 30 caratteri e una data di inizio; la data di fine deve seguire quella di inizio.');
+      setSalvataggio(false);
       return;
     }
 
@@ -222,22 +256,24 @@ export default function MioProfilo() {
       .eq('id', user.id);
 
     let errDettaglio = null;
-    const carrieraJson = carriera
-      .split('\n')
-      .map((line) => line.trim())
-      .filter(Boolean);
+    const carrieraJson = carriera.map(({ title, startDate, endDate }) => ({
+      title: title.trim(),
+      startDate,
+      endDate: endDate || null,
+    }));
     if (profilo.tipo_account === 'giocatore') {
       ({ error: errDettaglio } = await supabase.from('player_details').update({
         in_cerca_squadra: inCercaSquadra,
+        ruolo_principale: ruoloPrincipale,
         ruolo_secondario: ruoloSecondario || null,
         piede,
         altezza: altezza ? Number(altezza) : null,
         peso: peso ? Number(peso) : null,
         stato_contratto: statoContratto || null,
         lingue_parlate: linguePartlate.length ? linguePartlate : null,
-        nazione: nazioneProfilo,
-        regione: nazioneProfilo === 'IT' ? regioneProfilo || null : null,
-        provincia: nazioneProfilo === 'IT' ? provinciaProfilo || null : null,
+        nazione: 'IT',
+        regione: regioneProfilo,
+        provincia: provinciaProfilo,
         carriera: carrieraJson,
       }).eq('profile_id', user.id));
     } else if (profilo.tipo_account === 'allenatore') {
@@ -248,18 +284,18 @@ export default function MioProfilo() {
         modulo_preferito: moduloPreferito || null,
         stile_gioco: stileGioco || null,
         lingue_parlate: linguePartlate.length ? linguePartlate : null,
-        nazione: nazioneProfilo,
-        regione: nazioneProfilo === 'IT' ? regioneProfilo || null : null,
-        provincia: nazioneProfilo === 'IT' ? provinciaProfilo || null : null,
+        nazione: 'IT',
+        regione: regioneProfilo,
+        provincia: provinciaProfilo,
         carriera: carrieraJson,
       }).eq('profile_id', user.id));
     } else if (profilo.tipo_account === 'scout') {
       ({ error: errDettaglio } = await supabase.from('scout_details').update({
         in_cerca_squadra: inCercaSquadra,
         societa_attuale: societaAttuale || null,
-        nazione: nazioneProfilo || null,
-        regione: nazioneProfilo === 'IT' ? regioneProfilo || null : null,
-        provincia: nazioneProfilo === 'IT' ? provinciaProfilo || null : null,
+        nazione: 'IT',
+        regione: regioneProfilo,
+        provincia: provinciaProfilo,
         carriera: carrieraJson,
       }).eq('profile_id', user.id));
     } else if (profilo.tipo_account === 'societa') {
@@ -268,9 +304,9 @@ export default function MioProfilo() {
         in_cerca_giocatori: inCercaGiocatori,
         palmares: palmares || null,
         categoria: categoria || null,
-        nazione: nazioneProfilo || null,
-        regione: nazioneProfilo === 'IT' ? regioneProfilo || null : null,
-        provincia: nazioneProfilo === 'IT' ? provinciaProfilo || null : null,
+        nazione: 'IT',
+        regione: regioneProfilo,
+        provincia: provinciaProfilo,
         cerca_patentino: cercaPatentino || null,
         cerca_formazione: cercaFormazione || null,
         cerca_lingua: cercaLingua || null,
@@ -331,7 +367,6 @@ export default function MioProfilo() {
                   <p><strong>Altezza/Peso:</strong> {dettaglio.altezza || '—'} cm / {dettaglio.peso || '—'} kg</p>
                   <p><strong>In cerca di squadra:</strong> {dettaglio.in_cerca_squadra ? 'Sì' : 'No'}</p>
                   <p><strong>Stato:</strong> {CONTRACT_STATUS_OPTIONS.find((option) => option.value === canonicalContractStatus(dettaglio.stato_contratto))?.label || dettaglio.stato_contratto || '—'}</p>
-                  <p style={{ marginBottom: 0 }}><strong>Nazione:</strong> {countryLabel(dettaglio.nazione)} {dettaglio.regione ? `(${dettaglio.regione}, ${dettaglio.provincia || ''})` : ''}</p>
                 </>
               )}
               {profilo.tipo_account === 'allenatore' && dettaglio && (
@@ -339,7 +374,6 @@ export default function MioProfilo() {
                   <p><strong>Patentino:</strong> {dettaglio.patentino}</p>
                   <p><strong>Modulo preferito:</strong> {dettaglio.modulo_preferito || '—'}</p>
                   <p><strong>In cerca di squadra:</strong> {dettaglio.in_cerca_squadra ? 'Sì' : 'No'}</p>
-                  <p style={{ marginBottom: 0 }}><strong>Nazione:</strong> {countryLabel(dettaglio.nazione)}</p>
                 </>
               )}
               {profilo.tipo_account === 'scout' && dettaglio && (
@@ -357,8 +391,21 @@ export default function MioProfilo() {
                   {rosaGiocatori.length > 0 && <p style={{ marginBottom: 0 }}><strong>Giocatori:</strong> {rosaGiocatori.map((profile) => `${profile.nome} ${profile.cognome || ''}`).join(', ')}</p>}
                 </>
               )}
+              {(dettaglio?.regione || dettaglio?.provincia) && (
+                <p><strong>Zona:</strong> {[dettaglio.regione, dettaglio.provincia].filter(Boolean).join(' · ')}</p>
+              )}
               {Array.isArray(dettaglio?.carriera) && dettaglio.carriera.length > 0 && (
-                <p><strong>Carriera:</strong> {dettaglio.carriera.join(' · ')}</p>
+                <div className="profile-career">
+                  <h3>La tua carriera</h3>
+                  {dettaglio.carriera.filter((experience) => typeof experience === 'string' || (experience && typeof experience === 'object')).map((experience, index) => (
+                    <p key={`${typeof experience === 'string' ? experience : experience.title || 'esperienza'}-${index}`}>
+                      <strong>{typeof experience === 'string' ? experience : experience.title}</strong>
+                      {typeof experience !== 'string' && (
+                        <span> · {experience.startDate || 'Data inizio non indicata'} – {experience.endDate || 'In corso'}</span>
+                      )}
+                    </p>
+                  ))}
+                </div>
               )}
               {profilo.bio && <p style={{ marginTop: 12, marginBottom: 0 }}>{profilo.bio}</p>}
             </section>
@@ -382,24 +429,25 @@ export default function MioProfilo() {
               <label className="field__label">Descrizione (max 500 caratteri)</label>
               <textarea value={bio} maxLength={500} onChange={(e) => setBio(e.target.value)} rows={4} />
             </div>
-            <div className="field">
-              <label className="field__label" htmlFor="profile-country">Nazione</label>
-              <select id="profile-country" value={nazioneProfilo} onChange={(e) => { setNazioneProfilo(e.target.value); setRegioneProfilo(''); setProvinciaProfilo(''); }} required={profilo.tipo_account === 'giocatore' || profilo.tipo_account === 'allenatore'}>
-                <option value="">Seleziona una nazione…</option>
-                {withLegacyOption(COUNTRY_OPTIONS, nazioneProfilo).map((country) => <option key={country.value} value={country.value}>{country.label}</option>)}
-              </select>
-            </div>
-            {nazioneProfilo === 'IT' && (
-              <div className="field-row">
-                <input type="text" placeholder="Regione" value={regioneProfilo} onChange={(e) => setRegioneProfilo(e.target.value)} />
-                <input type="text" placeholder="Provincia" value={provinciaProfilo} onChange={(e) => setProvinciaProfilo(e.target.value)} />
-              </div>
-            )}
+            <ItalianLocationFields
+              region={regioneProfilo}
+              province={provinciaProfilo}
+              onRegionChange={setRegioneProfilo}
+              onProvinceChange={setProvinciaProfilo}
+              idPrefix="profile"
+              required
+            />
 
             {profilo.tipo_account === 'giocatore' && (
               <>
                 <label className="checkbox-field"><input type="checkbox" checked={inCercaSquadra} onChange={(e) => setInCercaSquadra(e.target.checked)} /> In cerca di squadra</label>
-                <input type="text" placeholder="Ruolo secondario" value={ruoloSecondario} onChange={(e) => setRuoloSecondario(e.target.value)} />
+                <PlayerPositionFields
+                  position={ruoloPrincipale}
+                  onPositionChange={setRuoloPrincipale}
+                  secondaryPosition={ruoloSecondario}
+                  onSecondaryPositionChange={setRuoloSecondario}
+                  idPrefix="profile-player"
+                />
                 <select value={piede} onChange={(e) => setPiede(e.target.value)}>
                   {PIEDI.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
                 </select>
@@ -415,10 +463,7 @@ export default function MioProfilo() {
                   </select>
                 </div>
                 <LanguagePicker value={linguePartlate} onChange={setLinguePartlate} />
-                <div className="field">
-                  <label className="field__label">Carriera (una esperienza per riga)</label>
-                  <textarea value={carriera} onChange={(e) => setCarriera(e.target.value)} rows={4} />
-                </div>
+                <CareerEditor experiences={carriera} onChange={setCarriera} error={erroreCarriera} />
               </>
             )}
 
@@ -441,10 +486,7 @@ export default function MioProfilo() {
                 </div>
                 <input type="text" placeholder="Stile di gioco" value={stileGioco} onChange={(e) => setStileGioco(e.target.value)} />
                 <LanguagePicker value={linguePartlate} onChange={setLinguePartlate} />
-                <div className="field">
-                  <label className="field__label">Carriera (una esperienza per riga)</label>
-                  <textarea value={carriera} onChange={(e) => setCarriera(e.target.value)} rows={4} />
-                </div>
+                <CareerEditor experiences={carriera} onChange={setCarriera} error={erroreCarriera} />
               </>
             )}
 
@@ -452,10 +494,7 @@ export default function MioProfilo() {
               <>
                 <label className="checkbox-field"><input type="checkbox" checked={inCercaSquadra} onChange={(e) => setInCercaSquadra(e.target.checked)} /> In cerca di squadra</label>
                 <input type="text" placeholder="Società attuale" value={societaAttuale} onChange={(e) => setSocietaAttuale(e.target.value)} />
-                <div className="field">
-                  <label className="field__label">Carriera (una esperienza per riga)</label>
-                  <textarea value={carriera} onChange={(e) => setCarriera(e.target.value)} rows={4} />
-                </div>
+                <CareerEditor experiences={carriera} onChange={setCarriera} error={erroreCarriera} />
               </>
             )}
 

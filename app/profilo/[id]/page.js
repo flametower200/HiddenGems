@@ -8,7 +8,6 @@ import UserAvatar from '../../../components/UserAvatar';
 import { avviaConversazione } from '../../../lib/chat';
 import { segui, smettiDiSeguire, aggiungiPreferito, rimuoviPreferito, controllaStato, getContatoriProfilo } from '../../../lib/social';
 import { caricaProfiloCompleto } from '../../../lib/profileHelpers';
-import { countryLabel } from '../../../lib/profileOptions';
 import { caricaRosaSocieta } from '../../../lib/clubRoster';
 
 function etaDaData(dataNascita) {
@@ -163,7 +162,6 @@ export default function ProfiloPubblico() {
               <p><strong>Ruolo:</strong> {dettaglio.ruolo_principale} {dettaglio.ruolo_secondario ? `/ ${dettaglio.ruolo_secondario}` : ''}</p>
               <p><strong>Piede:</strong> {dettaglio.piede || '—'}</p>
               <p><strong>In cerca di squadra:</strong> {dettaglio.in_cerca_squadra ? 'Sì' : 'No'}</p>
-              <p style={{ marginBottom: 0 }}><strong>Nazione:</strong> {countryLabel(dettaglio.nazione)}</p>
             </>
           )}
           {profilo.tipo_account === 'allenatore' && dettaglio && (
@@ -175,7 +173,6 @@ export default function ProfiloPubblico() {
           {profilo.tipo_account === 'scout' && dettaglio && (
             <>
               <p><strong>Società attuale:</strong> {dettaglio.societa_attuale || '—'}</p>
-              <p style={{ marginBottom: 0 }}><strong>Nazione:</strong> {countryLabel(dettaglio.nazione)}</p>
             </>
           )}
           {profilo.tipo_account === 'societa' && dettaglio && (
@@ -187,8 +184,21 @@ export default function ProfiloPubblico() {
               {rosaGiocatori.length > 0 && <p><strong>Giocatori:</strong> {rosaGiocatori.map((profile) => `${profile.nome} ${profile.cognome || ''}`).join(', ')}</p>}
             </>
           )}
+          {(dettaglio?.regione || dettaglio?.provincia) && (
+            <p><strong>Zona:</strong> {[dettaglio.regione, dettaglio.provincia].filter(Boolean).join(' · ')}</p>
+          )}
           {Array.isArray(dettaglio?.carriera) && dettaglio.carriera.length > 0 && (
-            <p><strong>Carriera:</strong> {dettaglio.carriera.join(' · ')}</p>
+            <div className="profile-career">
+              <h3>Carriera</h3>
+              {dettaglio.carriera.filter((experience) => typeof experience === 'string' || (experience && typeof experience === 'object')).map((experience, index) => (
+                <p key={`${typeof experience === 'string' ? experience : experience.title || 'esperienza'}-${index}`}>
+                  <strong>{typeof experience === 'string' ? experience : experience.title}</strong>
+                  {typeof experience !== 'string' && (
+                    <span> · {experience.startDate || 'Data inizio non indicata'} – {experience.endDate || 'In corso'}</span>
+                  )}
+                </p>
+              ))}
+            </div>
           )}
           {profilo.bio && <p style={{ marginTop: 12, marginBottom: 0 }}>{profilo.bio}</p>}
         </section>

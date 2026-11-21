@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import UserAvatar from './UserAvatar';
-import { countryLabel } from '../lib/profileOptions';
 
 const ACCOUNT_LABELS = {
   giocatore: 'Giocatore',
@@ -16,16 +15,16 @@ function detailsFor(profile) {
   if (!details) return '';
 
   if (profile.tipo_account === 'giocatore') {
-    return [details.ruolo_principale, details.piede, countryLabel(details.nazione)].filter(Boolean).join(' · ');
+    return [details.ruolo_principale, details.piede, details.regione, details.provincia].filter(Boolean).join(' · ');
   }
   if (profile.tipo_account === 'allenatore') {
-    return [details.patentino, countryLabel(details.nazione)].filter(Boolean).join(' · ');
+    return [details.patentino, details.regione, details.provincia].filter(Boolean).join(' · ');
   }
   if (profile.tipo_account === 'scout') {
-    return [details.societa_attuale, countryLabel(details.nazione)].filter(Boolean).join(' · ');
+    return [details.societa_attuale, details.regione, details.provincia].filter(Boolean).join(' · ');
   }
   if (profile.tipo_account === 'societa') {
-    return [details.categoria, details.annata_squadra, countryLabel(details.nazione)].filter(Boolean).join(' · ');
+    return [details.categoria, details.annata_squadra, details.regione, details.provincia].filter(Boolean).join(' · ');
   }
   return '';
 }

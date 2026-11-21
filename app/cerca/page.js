@@ -4,22 +4,24 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import AppHeader from '../../components/AppHeader';
 import ProfileCard from '../../components/ProfileCard';
+import ItalianLocationFields from '../../components/ItalianLocationFields';
 import { cerca } from '../../lib/search';
 import {
-  COUNTRY_OPTIONS,
   COACH_LICENSE_OPTIONS,
   CONTRACT_STATUS_OPTIONS,
   FORMATION_OPTIONS,
   LANGUAGE_OPTIONS,
 } from '../../lib/profileOptions';
-
-const RUOLI = ['Portiere', 'Difensore', 'Centrocampista', 'Attaccante'];
+import {
+  PLAYER_POSITION_CATEGORIES,
+  positionsForCategory,
+} from '../../lib/playerPositions';
 const PIEDI = ['destro', 'sinistro', 'ambidestro'];
 const ANNATE = ['U14', 'U15', 'U16', 'U17', 'U18', 'U19', 'Prima Squadra'];
 
 const FILTRI_VUOTI = {
-  ruolo: '', ruoloSecondario: '', piede: '', genere: '', inCercaSquadra: undefined, statoContratto: '',
-  nazione: '', lingua: '', etaMin: '', etaMax: '',
+  ruolo: '', ruoloCategoria: '', ruoloSecondario: '', piede: '', genere: '', inCercaSquadra: undefined, statoContratto: '',
+  lingua: '', etaMin: '', etaMax: '',
   patentino: '', moduloPreferito: '', inCercaGiocatori: undefined, verificato: undefined,
   regione: '', provincia: '',
   categoria: '', annataSquadra: '', genereSquadra: '', inCercaAllenatori: undefined, palmares: '',
@@ -134,13 +136,21 @@ export default function Cerca() {
           {tipoAccount === 'giocatore' && (
             <div className="subform">
               <div className="field-row">
-                <select value={filtri.ruolo} onChange={(e) => aggiorna('ruolo', e.target.value)}>
-                  <option value="">Ruolo (tutti)</option>
-                  {RUOLI.map((r) => <option key={r} value={r}>{r}</option>)}
+                <select value={filtri.ruoloCategoria} onChange={(e) => { aggiorna('ruoloCategoria', e.target.value); aggiorna('ruolo', ''); }}>
+                  <option value="">Reparto (tutti)</option>
+                  {PLAYER_POSITION_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
+                </select>
+                <select value={filtri.ruolo} onChange={(e) => aggiorna('ruolo', e.target.value)} disabled={!filtri.ruoloCategoria}>
+                  <option value="">Ruolo specifico (tutti)</option>
+                  {positionsForCategory(filtri.ruoloCategoria).map((position) => <option key={position} value={position}>{position}</option>)}
                 </select>
                 <select value={filtri.ruoloSecondario} onChange={(e) => aggiorna('ruoloSecondario', e.target.value)}>
-                  <option value="">Secondario (tutti)</option>
-                  {RUOLI.map((r) => <option key={r} value={r}>{r}</option>)}
+                  <option value="">Ruolo secondario (tutti)</option>
+                  {PLAYER_POSITION_CATEGORIES.map((category) => (
+                    <optgroup key={category} label={category}>
+                      {positionsForCategory(category).map((position) => <option key={position} value={position}>{position}</option>)}
+                    </optgroup>
+                  ))}
                 </select>
                 <select value={filtri.piede} onChange={(e) => aggiorna('piede', e.target.value)}>
                   <option value="">Piede (tutti)</option>
@@ -157,16 +167,13 @@ export default function Cerca() {
                 <option value="donna">Donna</option>
                 <option value="altro">Altro</option>
               </select>
-              <select value={filtri.nazione} onChange={(e) => aggiorna('nazione', e.target.value)}>
-                <option value="">Tutte le nazioni</option>
-                {COUNTRY_OPTIONS.map((country) => <option key={country.value} value={country.value}>{country.label}</option>)}
-              </select>
-              {filtri.nazione === 'IT' && (
-                <div className="field-row">
-                  <input type="text" placeholder="Regione" value={filtri.regione} onChange={(e) => aggiorna('regione', e.target.value)} />
-                  <input type="text" placeholder="Provincia" value={filtri.provincia} onChange={(e) => aggiorna('provincia', e.target.value)} />
-                </div>
-              )}
+              <ItalianLocationFields
+                region={filtri.regione}
+                province={filtri.provincia}
+                onRegionChange={(value) => { aggiorna('regione', value); aggiorna('provincia', ''); }}
+                onProvinceChange={(value) => aggiorna('provincia', value)}
+                idPrefix="search-player"
+              />
               <select value={filtri.statoContratto} onChange={(e) => aggiorna('statoContratto', e.target.value)}>
                 <option value="">Tutti gli stati contrattuali</option>
                 {CONTRACT_STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
@@ -202,16 +209,13 @@ export default function Cerca() {
                 <input type="number" min={18} max={120} inputMode="numeric" placeholder="Età min" value={filtri.etaMin} onChange={(e) => aggiorna('etaMin', e.target.value)} />
                 <input type="number" min={18} max={120} inputMode="numeric" placeholder="Età max" value={filtri.etaMax} onChange={(e) => aggiorna('etaMax', e.target.value)} />
               </div>
-              <select value={filtri.nazione} onChange={(e) => aggiorna('nazione', e.target.value)}>
-                <option value="">Tutte le nazioni</option>
-                {COUNTRY_OPTIONS.map((country) => <option key={country.value} value={country.value}>{country.label}</option>)}
-              </select>
-              {filtri.nazione === 'IT' && (
-                <div className="field-row">
-                  <input type="text" placeholder="Regione" value={filtri.regione} onChange={(e) => aggiorna('regione', e.target.value)} />
-                  <input type="text" placeholder="Provincia" value={filtri.provincia} onChange={(e) => aggiorna('provincia', e.target.value)} />
-                </div>
-              )}
+              <ItalianLocationFields
+                region={filtri.regione}
+                province={filtri.provincia}
+                onRegionChange={(value) => { aggiorna('regione', value); aggiorna('provincia', ''); }}
+                onProvinceChange={(value) => aggiorna('provincia', value)}
+                idPrefix="search-coach"
+              />
               <select value={filtri.lingua} onChange={(e) => aggiorna('lingua', e.target.value)}>
                 <option value="">Tutte le lingue</option>
                 {LANGUAGE_OPTIONS.map((language) => <option key={language.value} value={language.value}>{language.label}</option>)}
@@ -245,16 +249,13 @@ export default function Cerca() {
                 </select>
               </div>
               <input type="text" placeholder="Palmares contiene..." value={filtri.palmares} onChange={(e) => aggiorna('palmares', e.target.value)} />
-              <select value={filtri.nazione} onChange={(e) => aggiorna('nazione', e.target.value)}>
-                <option value="">Tutte le nazioni</option>
-                {COUNTRY_OPTIONS.map((country) => <option key={country.value} value={country.value}>{country.label}</option>)}
-              </select>
-              {filtri.nazione === 'IT' && (
-                <div className="field-row">
-                  <input type="text" placeholder="Regione" value={filtri.regione} onChange={(e) => aggiorna('regione', e.target.value)} />
-                  <input type="text" placeholder="Provincia" value={filtri.provincia} onChange={(e) => aggiorna('provincia', e.target.value)} />
-                </div>
-              )}
+              <ItalianLocationFields
+                region={filtri.regione}
+                province={filtri.provincia}
+                onRegionChange={(value) => { aggiorna('regione', value); aggiorna('provincia', ''); }}
+                onProvinceChange={(value) => aggiorna('provincia', value)}
+                idPrefix="search-club"
+              />
               <select value={filtri.cercaPatentino} onChange={(e) => aggiorna('cercaPatentino', e.target.value)}>
                 <option value="">Patentino cercato (tutti)</option>
                 {COACH_LICENSE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}

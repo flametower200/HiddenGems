@@ -4,15 +4,15 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { registraUtente, accedi } from '../lib/registration';
 import LanguagePicker from '../components/LanguagePicker';
+import ItalianLocationFields from '../components/ItalianLocationFields';
+import PlayerPositionFields from '../components/PlayerPositionFields';
 import Feed from './feed/page';
 import {
-  COUNTRY_OPTIONS,
   COACH_LICENSE_OPTIONS,
   CONTRACT_STATUS_OPTIONS,
   FORMATION_OPTIONS,
 } from '../lib/profileOptions';
 
-const RUOLI = ['Portiere', 'Difensore', 'Centrocampista', 'Attaccante'];
 const PIEDI = [
   { value: 'destro', label: 'Destro' },
   { value: 'sinistro', label: 'Sinistro' },
@@ -33,11 +33,11 @@ export default function Home() {
   const [genere, setGenere] = useState('');
   const [tipoAccount, setTipoAccount] = useState('giocatore');
   const [dataNascita, setDataNascita] = useState('');
-  const [nazione, setNazione] = useState('');
   const [regione, setRegione] = useState('');
   const [provincia, setProvincia] = useState('');
 
-  const [ruoloPrincipale, setRuoloPrincipale] = useState('Attaccante');
+  const [ruoloPrincipale, setRuoloPrincipale] = useState('Punta centrale');
+  const [ruoloSecondario, setRuoloSecondario] = useState('');
   const [piede, setPiede] = useState('destro');
   const [altezza, setAltezza] = useState('');
   const [patentino, setPatentino] = useState('');
@@ -73,29 +73,29 @@ export default function Home() {
         altezza: altezza ? Number(altezza) : null,
         stato_contratto: statoContratto || null,
         lingue_parlate: lingueParlate.length ? lingueParlate : null,
-        nazione, regione: nazione === 'IT' ? regione : null,
-        provincia: nazione === 'IT' ? provincia : null,
+        ruolo_secondario: ruoloSecondario || null,
+        nazione: 'IT', regione, provincia,
       };
     } else if (tipoAccount === 'allenatore') {
       dettagli = {
         patentino, modulo_preferito: moduloPreferito || null,
         lingue_parlate: lingueParlate.length ? lingueParlate : null,
-        nazione, regione: nazione === 'IT' ? regione : null,
-        provincia: nazione === 'IT' ? provincia : null,
+        nazione: 'IT', regione, provincia,
       };
     } else if (tipoAccount === 'scout') {
       dettagli = {
         societa_attuale: societaAttuale || null,
-        nazione: nazione || null,
-        regione: nazione === 'IT' ? regione || null : null,
-        provincia: nazione === 'IT' ? provincia || null : null,
+        nazione: 'IT',
+        regione,
+        provincia,
       };
     } else if (tipoAccount === 'societa') {
       dettagli = {
         categoria: categoria || null, genere_squadra: genereSquadra,
-        annata_squadra: annataSquadra, nazione: nazione || null,
-        regione: nazione === 'IT' ? regione || null : null,
-        provincia: nazione === 'IT' ? provincia || null : null,
+        annata_squadra: annataSquadra,
+        nazione: 'IT',
+        regione,
+        provincia,
       };
     }
 
@@ -192,26 +192,25 @@ export default function Home() {
                       />
                     </div>
                   )}
-                  <div className="field">
-                    <label className="field__label" htmlFor="registration-country">Nazione</label>
-                    <select id="registration-country" value={nazione} onChange={(e) => { setNazione(e.target.value); setRegione(''); setProvincia(''); }} required={tipoAccount === 'giocatore' || tipoAccount === 'allenatore'}>
-                      <option value="">Seleziona una nazione…</option>
-                      {COUNTRY_OPTIONS.map((country) => <option key={country.value} value={country.value}>{country.label}</option>)}
-                    </select>
-                  </div>
-                  {nazione === 'IT' && (
-                    <div className="field-row">
-                      <input type="text" placeholder="Regione" value={regione} onChange={(e) => setRegione(e.target.value)} />
-                      <input type="text" placeholder="Provincia" value={provincia} onChange={(e) => setProvincia(e.target.value)} />
-                    </div>
-                  )}
+                  <ItalianLocationFields
+                    region={regione}
+                    province={provincia}
+                    onRegionChange={setRegione}
+                    onProvinceChange={setProvincia}
+                    idPrefix="registration"
+                    required
+                  />
 
                   {tipoAccount === 'giocatore' && (
                     <div className="subform">
                       <h4>Dettagli giocatore</h4>
-                      <select value={ruoloPrincipale} onChange={(e) => setRuoloPrincipale(e.target.value)}>
-                        {RUOLI.map((r) => <option key={r} value={r}>{r}</option>)}
-                      </select>
+                      <PlayerPositionFields
+                        position={ruoloPrincipale}
+                        onPositionChange={setRuoloPrincipale}
+                        secondaryPosition={ruoloSecondario}
+                        onSecondaryPositionChange={setRuoloSecondario}
+                        idPrefix="registration-player"
+                      />
                       <select value={piede} onChange={(e) => setPiede(e.target.value)}>
                         {PIEDI.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
                       </select>
