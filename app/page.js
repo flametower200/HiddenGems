@@ -195,24 +195,32 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="landing-hero__visual" aria-hidden="true">
-              <div className="landing-visual__topline"><span>HIDDEN GEMS / ITALIA</span><span>01 — 04</span></div>
-              <div className="landing-pitch">
-                <span className="landing-pitch__halfway" />
-                <span className="landing-pitch__circle" />
-                <span className="landing-pitch__box landing-pitch__box--top" />
-                <span className="landing-pitch__box landing-pitch__box--bottom" />
-                <span className="landing-pitch__spot landing-pitch__spot--one" />
-                <span className="landing-pitch__spot landing-pitch__spot--two" />
-                <span className="landing-pitch__spot landing-pitch__spot--three" />
-                <div className="landing-signal landing-signal--one"><i /> TALENTO IN MOVIMENTO</div>
-                <div className="landing-signal landing-signal--two"><i /> NUOVE CONNESSIONI</div>
+            <aside className="landing-hero__visual" aria-label="Come HiddenGems valorizza il tuo talento">
+              <div className="landing-visual__topline">
+                <span>HIDDEN GEMS / ITALIA</span>
+                <span>UNA RETE APERTA</span>
               </div>
-              <div className="landing-visual__footer">
-                <span>Il prossimo nome da ricordare</span>
-                <strong>potrebbe essere il tuo.</strong>
+              <div className="landing-visual__profile">
+                <div className="landing-visual__profile-heading">
+                  <span className="landing-visual__profile-mark" aria-hidden="true">
+                    <svg viewBox="0 0 32 32">
+                      <path d="M16 2 30 16 16 30 2 16 16 2Z" fill="none" stroke="currentColor" strokeWidth="2" />
+                      <path d="M16 7 25 16 16 25 7 16 16 7Z" fill="currentColor" />
+                    </svg>
+                  </span>
+                  <span className="landing-visual__profile-kicker">PROFILO · VIDEO · PERCORSO</span>
+                </div>
+                <h2 className="landing-visual__profile-title">Il tuo talento, in primo piano.</h2>
+                <p className="landing-visual__profile-description">
+                  Racconta la tua esperienza e condividi le tue giocate con chi cerca nuovi profili nel calcio.
+                </p>
+                <div className="landing-visual__profile-tags">
+                  <span>Profilo</span>
+                  <span>Video</span>
+                  <span>Esperienza</span>
+                </div>
               </div>
-            </div>
+            </aside>
           </section>
 
           <section className="landing-intro" id="come-funziona">
