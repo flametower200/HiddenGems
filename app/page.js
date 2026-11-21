@@ -195,31 +195,62 @@ export default function Home() {
               </div>
             </div>
 
-            <aside className="landing-hero__visual" aria-label="Come HiddenGems valorizza il tuo talento">
+            <aside className="landing-hero__visual" aria-label="Anteprima scheda giocatore HiddenGems">
               <div className="landing-visual__topline">
                 <span>HIDDEN GEMS / ITALIA</span>
-                <span>UNA RETE APERTA</span>
+                <span>ANTEPRIMA PROFILO</span>
               </div>
-              <div className="landing-visual__profile">
-                <div className="landing-visual__profile-heading">
-                  <span className="landing-visual__profile-mark" aria-hidden="true">
-                    <svg viewBox="0 0 32 32">
-                      <path d="M16 2 30 16 16 30 2 16 16 2Z" fill="none" stroke="currentColor" strokeWidth="2" />
-                      <path d="M16 7 25 16 16 25 7 16 16 7Z" fill="currentColor" />
+              <article className="landing-player-preview">
+                <div className="landing-player-preview__header">
+                  <span className="landing-player-preview__avatar" aria-hidden="true">MR</span>
+                  <div className="landing-player-preview__identity">
+                    <div className="landing-player-preview__name-row">
+                      <h2>Marco Rossi</h2>
+                      <span className="landing-player-preview__availability">
+                        <span aria-hidden="true" />
+                        Disponibile
+                      </span>
+                    </div>
+                    <span className="landing-player-preview__role">Centrocampista • U18</span>
+                  </div>
+                </div>
+
+                <div className="landing-player-preview__rating">
+                  <span className="landing-player-preview__rating-mark" aria-hidden="true">✓</span>
+                  <span className="landing-player-preview__rating-copy">
+                    <span>Allenatore verificato</span>
+                    <strong>Valutazione Tecnica: 8.8 / 10</strong>
+                  </span>
+                </div>
+
+                <div
+                  className="landing-player-preview__video"
+                  role="img"
+                  aria-label="Anteprima video: 0:42, Highlights Match"
+                >
+                  <span className="landing-player-preview__play" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M9 6.5v11l9-5.5-9-5.5Z" fill="currentColor" />
                     </svg>
                   </span>
-                  <span className="landing-visual__profile-kicker">PROFILO · VIDEO · PERCORSO</span>
+                  <span className="landing-player-preview__video-label" aria-hidden="true">0:42 • Highlights Match</span>
                 </div>
-                <h2 className="landing-visual__profile-title">Il tuo talento, in primo piano.</h2>
-                <p className="landing-visual__profile-description">
-                  Racconta la tua esperienza e condividi le tue giocate con chi cerca nuovi profili nel calcio.
-                </p>
-                <div className="landing-visual__profile-tags">
-                  <span>Profilo</span>
-                  <span>Video</span>
-                  <span>Esperienza</span>
-                </div>
-              </div>
+
+                <dl className="landing-player-preview__stats">
+                  <div>
+                    <dt>Piede</dt>
+                    <dd>Destro</dd>
+                  </div>
+                  <div>
+                    <dt>Altezza</dt>
+                    <dd>178 cm</dd>
+                  </div>
+                  <div>
+                    <dt>Zona</dt>
+                    <dd>Piemonte, IT</dd>
+                  </div>
+                </dl>
+              </article>
             </aside>
           </section>
 
@@ -239,21 +270,33 @@ export default function Home() {
           <section className="landing-features" aria-label="Cosa puoi fare su HiddenGems">
             <article className="landing-feature landing-feature--primary">
               <span className="landing-feature__index">01 / GIOCATORI</span>
-              <div className="landing-feature__icon landing-feature__icon--play" aria-hidden="true">▶</div>
+              <div className="landing-feature__icon landing-feature__icon--play" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M8 5.5v13l10-6.5-10-6.5Z" fill="currentColor" /></svg>
+              </div>
               <h3>Fatti vedere in campo.</h3>
               <p>Racconta il tuo profilo e condividi i video delle tue giocate con una rete che cerca nuovi talenti.</p>
               <span className="landing-feature__link">Profilo e video <span aria-hidden="true">↗</span></span>
             </article>
             <article className="landing-feature">
               <span className="landing-feature__index">02 / SCOUTING</span>
-              <div className="landing-feature__icon" aria-hidden="true">⌕</div>
+              <div className="landing-feature__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <circle cx="10.5" cy="10.5" r="6.5" />
+                  <path d="m15.5 15.5 5 5" />
+                </svg>
+              </div>
               <h3>Trova il profilo giusto.</h3>
               <p>Cerca per ruolo, caratteristiche e zona. Scopri giocatori e professionisti anche fuori dai circuiti abituali.</p>
               <span className="landing-feature__link">Ricerca mirata <span aria-hidden="true">↗</span></span>
             </article>
             <article className="landing-feature">
               <span className="landing-feature__index">03 / PERCORSI</span>
-              <div className="landing-feature__icon" aria-hidden="true">↗</div>
+              <div className="landing-feature__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="5" cy="12" r="2" />
+                  <path d="M8 12h11m-5-5 5 5-5 5" />
+                </svg>
+              </div>
               <h3>Costruisci connessioni.</h3>
               <p>Presenta la tua esperienza, segui i profili interessanti e avvia conversazioni in modo diretto e trasparente.</p>
               <span className="landing-feature__link">Una rete, più vicina <span aria-hidden="true">↗</span></span>
