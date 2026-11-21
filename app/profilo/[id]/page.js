@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '../../../lib/supabase';
 import AppHeader from '../../../components/AppHeader';
 import UserAvatar from '../../../components/UserAvatar';
+import LoadingSkeleton from '../../../components/LoadingSkeleton';
 import { avviaConversazione } from '../../../lib/chat';
 import { segui, smettiDiSeguire, aggiungiPreferito, rimuoviPreferito, controllaStato, getContatoriProfilo } from '../../../lib/social';
 import { caricaProfiloCompleto } from '../../../lib/profileHelpers';
@@ -26,6 +27,9 @@ export default function ProfiloPubblico() {
 
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [erroreProfilo, setErroreProfilo] = useState('');
+  const [erroreAzione, setErroreAzione] = useState('');
+  const [azioneSociale, setAzioneSociale] = useState('');
   const [profilo, setProfilo] = useState(null);
   const [dettaglio, setDettaglio] = useState(null);
   const [contatori, setContatori] = useState({ follower: 0, seguiti: 0, preferiti: 0 });
@@ -37,6 +41,7 @@ export default function ProfiloPubblico() {
 
   const carica = useCallback(async () => {
     setLoading(true);
+    setErroreProfilo('');
     try {
       const [{ profilo: p, dettaglio: d, squadraAttuale: squadra }, c, s] = await Promise.all([
         caricaProfiloCompleto(id),
@@ -55,6 +60,7 @@ export default function ProfiloPubblico() {
       setStato(s);
     } catch (err) {
       console.error('Errore caricamento profilo:', err.message);
+      setErroreProfilo('Non è stato possibile caricare il profilo. Riprova tra poco.');
     }
     setLoading(false);
   }, [id]);
@@ -76,43 +82,58 @@ export default function ProfiloPubblico() {
 
   const handleMessaggi = async () => {
     setInviandoRichiesta(true);
+    setErroreAzione('');
     try {
       await avviaConversazione(id);
-      alert('Richiesta di chat inviata! La trovi nella sezione Messaggi non appena viene accettata.');
-      router.push('/messaggi');
+      setErroreAzione('Richiesta inviata. Potrai scrivere quando verrà accettata.');
     } catch (err) {
-      alert('Errore: ' + err.message);
+      setErroreAzione(`Non è stato possibile inviare la richiesta: ${err.message}`);
+    } finally {
+      setInviandoRichiesta(false);
     }
-    setInviandoRichiesta(false);
   };
 
-  const toggleSegui = async () => {
+  const toggleSocial = async (tipo) => {
+    if (azioneSociale) return;
+    const seguitoPrima = stato.seguito;
+    const preferitoPrima = stato.preferito;
+    const contatoriPrima = contatori;
+    const attivoPrima = tipo === 'segui' ? seguitoPrima : preferitoPrima;
+    const cambiaStato = tipo === 'segui' ? segui : aggiungiPreferito;
+    const rimuoviStato = tipo === 'segui' ? smettiDiSeguire : rimuoviPreferito;
+    const conteggio = tipo === 'segui' ? 'follower' : 'preferiti';
+    const delta = attivoPrima ? -1 : 1;
+
+    setAzioneSociale(tipo);
+    setErroreAzione('');
+    setStato((current) => ({ ...current, [tipo === 'segui' ? 'seguito' : 'preferito']: !attivoPrima }));
+    setContatori((current) => ({ ...current, [conteggio]: Math.max(0, (current[conteggio] || 0) + delta) }));
     try {
-      if (stato.seguito) await smettiDiSeguire(id);
-      else await segui(id);
-      const [c, s] = await Promise.all([getContatoriProfilo(id), controllaStato(id)]);
+      await (attivoPrima ? rimuoviStato(id) : cambiaStato(id));
+      const c = await getContatoriProfilo(id);
       setContatori(c);
-      setStato(s);
     } catch (err) {
-      alert('Errore: ' + err.message);
+      setStato({ seguito: seguitoPrima, preferito: preferitoPrima });
+      setContatori(contatoriPrima);
+      setErroreAzione(`Modifica non riuscita. Riprova. ${err.message}`);
+    } finally {
+      setAzioneSociale('');
     }
   };
 
-  const togglePreferito = async () => {
-    try {
-      if (stato.preferito) await rimuoviPreferito(id);
-      else await aggiungiPreferito(id);
-      const [c, s] = await Promise.all([getContatoriProfilo(id), controllaStato(id)]);
-      setContatori(c);
-      setStato(s);
-    } catch (err) {
-      alert('Errore: ' + err.message);
-    }
-  };
-
-  if (loading) return <div className="state-message">Caricamento...</div>;
+  if (loading) return <LoadingSkeleton variant="profile" />;
   if (!session) return <div className="state-message">Devi accedere per vedere questa pagina.</div>;
-  if (!profilo) return <div className="state-message">Profilo non trovato.</div>;
+  if (!profilo) {
+    return (
+      <main className="page">
+        <div className="state-message" role="alert">
+          <h1>{erroreProfilo ? 'Profilo non disponibile' : 'Profilo non trovato'}</h1>
+          <p>{erroreProfilo || 'Questo profilo non esiste o non è più disponibile.'}</p>
+          {erroreProfilo && <button type="button" className="btn btn--primary" onClick={carica}>Riprova</button>}
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="page profile-screen">
@@ -141,13 +162,21 @@ export default function ProfiloPubblico() {
           <button onClick={handleMessaggi} disabled={inviandoRichiesta} className="btn btn--secondary">
             {inviandoRichiesta ? 'Invio...' : '✉ Messaggi'}
           </button>
-          <button onClick={toggleSegui} className={stato.seguito ? 'btn btn--outline' : 'btn btn--primary'}>
+          <button onClick={() => toggleSocial('segui')} disabled={Boolean(azioneSociale)} className={stato.seguito ? 'btn btn--outline' : 'btn btn--primary'}>
             {stato.seguito ? '✓ Segui già' : '+ Segui'}
           </button>
-          <button onClick={togglePreferito} className={stato.preferito ? 'btn btn--outline' : 'btn btn--primary'}>
+          <button onClick={() => toggleSocial('preferito')} disabled={Boolean(azioneSociale)} className={stato.preferito ? 'btn btn--outline' : 'btn btn--primary'}>
             {stato.preferito ? '★ Nei preferiti' : '☆ Aggiungi ai preferiti'}
           </button>
         </div>
+        {erroreAzione && (
+          <p
+            className={`action-feedback${erroreAzione.startsWith('Richiesta inviata') ? '' : ' is-error'}`}
+            role={erroreAzione.startsWith('Richiesta inviata') ? 'status' : 'alert'}
+          >
+            {erroreAzione}
+          </p>
+        )}
         </section>
 
         <section className="card card--panel profile-details">

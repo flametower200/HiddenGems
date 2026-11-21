@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
 import AppHeader from '../../components/AppHeader';
 import UserAvatar from '../../components/UserAvatar';
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { getFeed, metti_like, togli_like, getCommenti, aggiungiCommento, eliminaVideo } from '../../lib/feed';
 
 function IconLike({ active }) {
@@ -34,16 +35,23 @@ function IconDelete() {
 function PostCard({ post, sessionUserId, onDelete }) {
   const [miPiace, setMiPiace] = useState(post.miPiace);
   const [numeroLike, setNumeroLike] = useState(post.numeroLike);
+  const [likeInviato, setLikeInviato] = useState(false);
   const [commentiAperti, setCommentiAperti] = useState(false);
   const [commenti, setCommenti] = useState([]);
   const [caricandoCommenti, setCaricandoCommenti] = useState(false);
+  const [erroreCommenti, setErroreCommenti] = useState('');
+  const [inviandoCommento, setInviandoCommento] = useState(false);
+  const [errorePost, setErrorePost] = useState('');
   const [nuovoCommento, setNuovoCommento] = useState('');
   const [eliminando, setEliminando] = useState(false);
   const isAuthor = post.autore_id === sessionUserId;
 
   const toggleLike = async () => {
+    if (likeInviato) return;
     const previousMiPiace = miPiace;
     const previousNumeroLike = numeroLike;
+    setErrorePost('');
+    setLikeInviato(true);
     try {
       if (miPiace) {
         setMiPiace(false);
@@ -57,34 +65,51 @@ function PostCard({ post, sessionUserId, onDelete }) {
     } catch (err) {
       setMiPiace(previousMiPiace);
       setNumeroLike(previousNumeroLike);
-      alert('Errore: ' + err.message);
+      setErrorePost(`Non è stato possibile aggiornare il "mi piace". ${err.message}`);
+    } finally {
+      setLikeInviato(false);
+    }
+  };
+
+  const caricaCommenti = async () => {
+    setCaricandoCommenti(true);
+    setErroreCommenti('');
+    try {
+      setCommenti(await getCommenti(post.id));
+    } catch (err) {
+      console.error('Errore caricamento commenti:', err.message);
+      setErroreCommenti('Non è stato possibile caricare i commenti.');
+    } finally {
+      setCaricandoCommenti(false);
     }
   };
 
   const apriCommenti = async () => {
     const apri = !commentiAperti;
     setCommentiAperti(apri);
-    if (apri && commenti.length === 0) {
-      setCaricandoCommenti(true);
-      try {
-        setCommenti(await getCommenti(post.id));
-      } catch (err) {
-        console.error('Errore caricamento commenti:', err.message);
-      } finally {
-        setCaricandoCommenti(false);
-      }
-    }
+    if (apri && commenti.length === 0) await caricaCommenti();
   };
 
   const invia = async (e) => {
     e.preventDefault();
-    if (!nuovoCommento.trim()) return;
+    const testoCommento = nuovoCommento.trim();
+    if (!testoCommento || inviandoCommento) return;
+    const idOttimistico = `pending-${Date.now()}`;
+    setCommenti((prev) => [...prev, { id: idOttimistico, testo: testoCommento, autore: null, inInvio: true }]);
+    setNuovoCommento('');
+    setErroreCommenti('');
+    setInviandoCommento(true);
     try {
-      const c = await aggiungiCommento(post.id, nuovoCommento);
-      setCommenti((prev) => [...prev, { ...c, autore: null }]);
-      setNuovoCommento('');
+      const c = await aggiungiCommento(post.id, testoCommento);
+      setCommenti((prev) => prev.map((commento) => (
+        commento.id === idOttimistico ? { ...c, autore: null } : commento
+      )));
     } catch (err) {
-      alert('Errore: ' + err.message);
+      setCommenti((prev) => prev.filter((commento) => commento.id !== idOttimistico));
+      setNuovoCommento(testoCommento);
+      setErroreCommenti(`Commento non inviato. Riprova. ${err.message}`);
+    } finally {
+      setInviandoCommento(false);
     }
   };
 
@@ -95,7 +120,7 @@ function PostCard({ post, sessionUserId, onDelete }) {
       await eliminaVideo(post.id);
       onDelete(post.id);
     } catch (err) {
-      window.alert('Errore eliminazione: ' + err.message);
+      setErrorePost(`Non è stato possibile eliminare il video. ${err.message}`);
       setEliminando(false);
     }
   };
@@ -130,7 +155,7 @@ function PostCard({ post, sessionUserId, onDelete }) {
       <div className="feed-post__body">
         {post.didascalia && <p className="feed-post__caption">{post.didascalia}</p>}
         <div className="feed-post__actions">
-          <button type="button" onClick={toggleLike} className={`feed-post__action${miPiace ? ' is-active' : ''}`} aria-pressed={miPiace}>
+          <button type="button" onClick={toggleLike} disabled={likeInviato} className={`feed-post__action${miPiace ? ' is-active' : ''}`} aria-pressed={miPiace} aria-busy={likeInviato}>
             <IconLike active={miPiace} />
             <span>{numeroLike}</span>
           </button>
@@ -139,11 +164,18 @@ function PostCard({ post, sessionUserId, onDelete }) {
             <span>Commenti</span>
           </button>
         </div>
+        {errorePost && <p className="form-error" role="alert">{errorePost}</p>}
 
         {commentiAperti && (
           <div className="feed-comments">
             {caricandoCommenti ? (
-              <p className="feed-comments__empty">Caricamento commenti…</p>
+              <div className="feed-comments__skeleton" role="status" aria-label="Caricamento commenti">
+                <span /><span /><span />
+              </div>
+            ) : erroreCommenti ? (
+              <p className="feed-comments__empty" role="alert">
+                {erroreCommenti} <button type="button" className="btn--ghost" onClick={caricaCommenti}>Riprova</button>
+              </p>
             ) : commenti.length === 0 ? (
               <p className="feed-comments__empty">Nessun commento ancora. Inizia tu la conversazione.</p>
             ) : (
@@ -151,13 +183,14 @@ function PostCard({ post, sessionUserId, onDelete }) {
                 {commenti.map((c) => (
                   <p key={c.id} className="feed-comments__item">
                     <strong>{c.autore ? `${c.autore.nome} ${c.autore.cognome || ''}` : 'Utente'}:</strong> {c.testo}
+                    {c.inInvio && <small> · Invio…</small>}
                   </p>
                 ))}
               </div>
             )}
             <form onSubmit={invia} className="feed-comments__form">
               <input type="text" maxLength={500} placeholder="Scrivi un commento..." value={nuovoCommento} onChange={(e) => setNuovoCommento(e.target.value)} />
-              <button type="submit" className="btn btn--secondary btn--sm">Invia</button>
+              <button type="submit" disabled={inviandoCommento || !nuovoCommento.trim()} className="btn btn--secondary btn--sm">{inviandoCommento ? 'Invio…' : 'Invia'}</button>
             </form>
           </div>
         )}
@@ -171,25 +204,38 @@ export default function Feed() {
   const [tipoAccount, setTipoAccount] = useState(null);
   const [loading, setLoading] = useState(true);
   const [post, setPost] = useState([]);
+  const [erroreFeed, setErroreFeed] = useState('');
 
-  useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+  const caricaFeed = useCallback(async () => {
+    setLoading(true);
+    setErroreFeed('');
+    try {
+      const { data: { session }, error: errSession } = await supabase.auth.getSession();
+      if (errSession) throw errSession;
       setSession(session);
       if (session) {
-        const profilePromise = supabase.from('profiles').select('tipo_account').eq('id', session.user.id).single();
-        const feedPromise = getFeed({ userId: session.user.id }).catch((err) => {
-          console.error('Errore caricamento feed:', err.message);
-          return [];
-        });
-        const [{ data: profilo }, feedPosts] = await Promise.all([profilePromise, feedPromise]);
+        const [profileResult, feedPosts] = await Promise.all([
+          supabase.from('profiles').select('tipo_account').eq('id', session.user.id).single(),
+          getFeed({ userId: session.user.id }),
+        ]);
+        if (profileResult.error) throw profileResult.error;
+        const profilo = profileResult.data;
         setTipoAccount(profilo?.tipo_account || null);
         setPost(feedPosts);
       }
+    } catch (error) {
+      console.error('Errore caricamento feed:', error.message);
+      setErroreFeed('Non è stato possibile caricare il feed. Controlla la connessione e riprova.');
+    } finally {
       setLoading(false);
-    });
+    }
   }, []);
 
-  if (loading) return <div className="state-message">Caricamento...</div>;
+  useEffect(() => {
+    Promise.resolve().then(caricaFeed);
+  }, [caricaFeed]);
+
+  if (loading) return <LoadingSkeleton variant="feed" />;
   if (!session) {
     return (
       <main className="page">
@@ -215,7 +261,14 @@ export default function Feed() {
         </div>
 
         <div className="feed-list">
-          {post.length === 0 ? (
+          {erroreFeed ? (
+            <div className="directory-empty" role="alert">
+              <span className="directory-empty__mark" aria-hidden="true">!</span>
+              <h2>Feed non disponibile</h2>
+              <p>{erroreFeed}</p>
+              <button type="button" className="btn btn--primary" onClick={caricaFeed}>Riprova</button>
+            </div>
+          ) : post.length === 0 ? (
             <div className="feed-empty">
               <span className="feed-empty__mark" aria-hidden="true">HG</span>
               <h2>Il campo è libero</h2>

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { supabase } from '../../lib/supabase';
 import AppHeader from '../../components/AppHeader';
 import UserAvatar from '../../components/UserAvatar';
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import {
   getChatInApprovazione, getChatApprovate, accettaChat, rifiutaChat,
   getMessaggi, inviaMessaggio, sottoscriviMessaggi,
@@ -15,6 +16,8 @@ export default function Messaggi() {
   const [loading, setLoading] = useState(true);
   const [erroreCaricamento, setErroreCaricamento] = useState('');
   const [caricandoChat, setCaricandoChat] = useState(false);
+  const [inviandoMessaggio, setInviandoMessaggio] = useState(false);
+  const [erroreInvio, setErroreInvio] = useState('');
   const [tab, setTab] = useState('approvate');
   const [inApprovazione, setInApprovazione] = useState([]);
   const [approvate, setApprovate] = useState([]);
@@ -49,11 +52,14 @@ export default function Messaggi() {
   const apriChat = async (chat) => {
     setCaricandoChat(true);
     setChatAperta(chat);
+    setMessaggi([]);
+    setErroreInvio('');
+    setErroreCaricamento('');
     try {
       setMessaggi(await getMessaggi(chat.id));
     } catch (error) {
       setChatAperta(null);
-      alert('Non è stato possibile aprire la conversazione. Riprova.');
+      setErroreCaricamento('Non è stato possibile aprire la conversazione. Riprova.');
       console.error('Errore caricamento messaggi:', error.message);
     } finally {
       setCaricandoChat(false);
@@ -64,7 +70,17 @@ export default function Messaggi() {
     const chatId = chatAperta?.id;
     if (!chatId) return undefined;
     const annulla = sottoscriviMessaggi(chatId, (nuovo) => {
-      setMessaggi((prev) => [...prev, nuovo]);
+      setMessaggi((prev) => {
+        if (prev.some((messaggio) => messaggio.id === nuovo.id)) return prev;
+        const ottimistico = prev.findIndex((messaggio) => (
+          messaggio.inInvio
+          && messaggio.sender_id === nuovo.sender_id
+          && messaggio.testo === nuovo.testo
+        ));
+        return ottimistico === -1
+          ? [...prev, nuovo]
+          : prev.map((messaggio, index) => index === ottimistico ? nuovo : messaggio);
+      });
     });
     return () => annulla();
   }, [chatAperta?.id]);
@@ -75,31 +91,55 @@ export default function Messaggi() {
 
   const handleAccetta = async (chatId) => {
     try {
+      setErroreCaricamento('');
       await accettaChat(chatId);
       await caricaListe();
       setTab('approvate');
     } catch (err) {
-      alert('Errore: ' + err.message);
+      setErroreCaricamento(`Non è stato possibile accettare la richiesta. ${err.message}`);
     }
   };
 
   const handleRifiuta = async (chatId) => {
     try {
+      setErroreCaricamento('');
       await rifiutaChat(chatId);
       await caricaListe();
     } catch (err) {
-      alert('Errore: ' + err.message);
+      setErroreCaricamento(`Non è stato possibile rifiutare la richiesta. ${err.message}`);
     }
   };
 
   const handleInvia = async (e) => {
     e.preventDefault();
-    if (!testo.trim()) return;
+    const testoMessaggio = testo.trim();
+    if (!testoMessaggio || inviandoMessaggio || !chatAperta) return;
+    const idOttimistico = `pending-${Date.now()}`;
+    const messaggioOttimistico = {
+      id: idOttimistico,
+      chat_id: chatAperta.id,
+      sender_id: session.user.id,
+      testo: testoMessaggio,
+      created_at: new Date().toISOString(),
+      inInvio: true,
+    };
+    setMessaggi((prev) => [...prev, messaggioOttimistico]);
+    setTesto('');
+    setErroreInvio('');
+    setInviandoMessaggio(true);
     try {
-      await inviaMessaggio(chatAperta.id, testo);
-      setTesto('');
+      const inviato = await inviaMessaggio(chatAperta.id, testoMessaggio);
+      setMessaggi((prev) => (
+        prev.some((messaggio) => messaggio.id === inviato.id)
+          ? prev.filter((messaggio) => messaggio.id !== idOttimistico)
+          : prev.map((messaggio) => messaggio.id === idOttimistico ? inviato : messaggio)
+      ));
     } catch (err) {
-      alert('Errore: ' + err.message);
+      setMessaggi((prev) => prev.filter((messaggio) => messaggio.id !== idOttimistico));
+      setTesto(testoMessaggio);
+      setErroreInvio(`Messaggio non inviato. Riprova. ${err.message}`);
+    } finally {
+      setInviandoMessaggio(false);
     }
   };
 
@@ -109,7 +149,7 @@ export default function Messaggi() {
     return `${altro.nome} ${altro.cognome || ''}`;
   };
 
-  if (loading) return <div className="state-message">Caricamento...</div>;
+  if (loading) return <LoadingSkeleton variant="messages" />;
   if (!session) return <div className="state-message">Devi accedere per vedere questa pagina.</div>;
 
   return (
@@ -124,7 +164,12 @@ export default function Messaggi() {
           </div>
         </div>
 
-        {erroreCaricamento && <p className="form-error" role="alert">{erroreCaricamento}</p>}
+        {erroreCaricamento && (
+          <div className="form-error" role="alert">
+            <p>{erroreCaricamento}</p>
+            <button type="button" className="btn btn--outline btn--sm" onClick={() => caricaListe()}>Riprova</button>
+          </div>
+        )}
 
         <div className="tabs message-tabs" role="group" aria-label="Caselle messaggi">
           <button
@@ -198,18 +243,21 @@ export default function Messaggi() {
               ← Torna alla lista
             </button>
             <h4>{nomeAltroPartecipante(chatAperta)}</h4>
-            {caricandoChat ? <p className="state-message">Caricamento messaggi…</p> : null}
-            <div className="chat-thread">
-              {messaggi.map((m) => (
-                <div key={m.id} className={`chat-bubble ${m.sender_id === session.user.id ? 'chat-bubble--mine' : 'chat-bubble--theirs'}`}>
-                  {m.testo}
-                </div>
-              ))}
-              <div ref={bottomRef} />
-            </div>
+            {caricandoChat ? <LoadingSkeleton variant="thread" /> : (
+              <div className="chat-thread">
+                {messaggi.map((m) => (
+                  <div key={m.id} className={`chat-bubble ${m.sender_id === session.user.id ? 'chat-bubble--mine' : 'chat-bubble--theirs'}${m.inInvio ? ' chat-bubble--pending' : ''}`}>
+                    {m.testo}
+                    {m.inInvio && <small>Invio…</small>}
+                  </div>
+                ))}
+                <div ref={bottomRef} />
+              </div>
+            )}
+            {erroreInvio && <p className="form-error" role="alert">{erroreInvio}</p>}
             <form onSubmit={handleInvia} className="chat-composer">
-              <input type="text" value={testo} onChange={(e) => setTesto(e.target.value)} placeholder="Scrivi un messaggio..." />
-              <button type="submit" className="btn btn--primary">Invia</button>
+              <input type="text" maxLength={2000} value={testo} onChange={(e) => setTesto(e.target.value)} placeholder="Scrivi un messaggio..." aria-label="Scrivi un messaggio" />
+              <button type="submit" disabled={inviandoMessaggio || !testo.trim()} className="btn btn--primary">{inviandoMessaggio ? 'Invio…' : 'Invia'}</button>
             </form>
           </div>
         )}

@@ -7,6 +7,7 @@ import UserAvatar from '../../components/UserAvatar';
 import CareerEditor from '../../components/CareerEditor';
 import ItalianLocationFields from '../../components/ItalianLocationFields';
 import PlayerPositionFields from '../../components/PlayerPositionFields';
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { getContatoriProfilo } from '../../lib/social';
 import { caricaProfiloCompleto, invalidaCacheProfili } from '../../lib/profileHelpers';
 import LanguagePicker from '../../components/LanguagePicker';
@@ -45,6 +46,7 @@ function etaDaData(dataNascita) {
 export default function MioProfilo() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [erroreCaricamento, setErroreCaricamento] = useState('');
   const [profilo, setProfilo] = useState(null);
   const [dettaglio, setDettaglio] = useState(null);
   const [contatori, setContatori] = useState({ follower: 0, seguiti: 0, preferiti: 0 });
@@ -87,6 +89,7 @@ export default function MioProfilo() {
 
   const caricaProfilo = useCallback(async (userId) => {
     setLoading(true);
+    setErroreCaricamento('');
     try {
       const [{ profilo: p, dettaglio: d, squadraAttuale: squadra }, c] = await Promise.all([
         caricaProfiloCompleto(userId),
@@ -155,6 +158,7 @@ export default function MioProfilo() {
       setContatori(c);
     } catch (err) {
       console.error('Errore caricamento profilo:', err.message);
+      setErroreCaricamento('Non è stato possibile caricare il profilo. Controlla la connessione e riprova.');
     }
     setLoading(false);
   }, []);
@@ -323,9 +327,19 @@ export default function MioProfilo() {
     caricaProfilo(user.id);
   };
 
-  if (loading) return <div className="state-message">Caricamento...</div>;
+  if (loading) return <LoadingSkeleton variant="profile" />;
   if (!session) return <div className="state-message">Devi accedere per vedere questa pagina.</div>;
-  if (!profilo) return <div className="state-message">Profilo non trovato.</div>;
+  if (!profilo) {
+    return (
+      <main className="page">
+        <div className="state-message" role="alert">
+          <h1>{erroreCaricamento ? 'Profilo non disponibile' : 'Profilo non trovato'}</h1>
+          <p>{erroreCaricamento || 'Il profilo non è disponibile.'}</p>
+          {erroreCaricamento && <button type="button" className="btn btn--primary" onClick={() => caricaProfilo(session.user.id)}>Riprova</button>}
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="page profile-screen">

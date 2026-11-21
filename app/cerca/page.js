@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase';
 import AppHeader from '../../components/AppHeader';
 import ProfileCard from '../../components/ProfileCard';
 import ItalianLocationFields from '../../components/ItalianLocationFields';
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import { cerca } from '../../lib/search';
 import {
   COACH_LICENSE_OPTIONS,
@@ -90,7 +91,7 @@ export default function Cerca() {
 
   const filtriAttivi = Object.values(filtri).filter((value) => value !== '' && value !== undefined && value !== false).length;
 
-  if (loading) return <div className="state-message">Caricamento...</div>;
+  if (loading) return <LoadingSkeleton variant="search" />;
   if (!session) return <div className="state-message">Devi accedere per vedere questa pagina.</div>;
 
   return (
@@ -287,7 +288,8 @@ export default function Cerca() {
           </details>
         </form>
 
-        {risultati !== null && (
+        {cercando && <LoadingSkeleton variant="results" />}
+        {!cercando && risultati !== null && (
           <section className="search-results" aria-live="polite">
             <div className="search-results__heading">
               <h2>Risultati</h2>

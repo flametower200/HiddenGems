@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase';
 import AppHeader from '../../components/AppHeader';
 import { cambiaPassword, eliminaAccount } from '../../lib/accountSettings';
 import { esci } from '../../lib/registration';
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 
 export default function Impostazioni() {
   const [session, setSession] = useState(null);
@@ -47,7 +48,7 @@ export default function Impostazioni() {
     setEliminando(false);
   };
 
-  if (loading) return <div className="state-message">Caricamento...</div>;
+  if (loading) return <LoadingSkeleton variant="page" />;
   if (!session) return <div className="state-message">Devi accedere per vedere questa pagina.</div>;
 
   return (

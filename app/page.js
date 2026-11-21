@@ -6,6 +6,7 @@ import { registraUtente, accedi } from '../lib/registration';
 import LanguagePicker from '../components/LanguagePicker';
 import ItalianLocationFields from '../components/ItalianLocationFields';
 import PlayerPositionFields from '../components/PlayerPositionFields';
+import LoadingSkeleton from '../components/LoadingSkeleton';
 import Feed from './feed/page';
 import {
   COACH_LICENSE_OPTIONS,
@@ -131,7 +132,7 @@ export default function Home() {
     setLoading(false);
   };
 
-  if (loading) return <div className="state-message">Caricamento in corso...</div>;
+  if (loading) return <LoadingSkeleton variant="auth" />;
 
   if (session) return <Feed />;
 

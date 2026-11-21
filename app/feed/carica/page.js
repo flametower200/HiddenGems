@@ -6,6 +6,7 @@ import { supabase } from '../../../lib/supabase';
 import AppHeader from '../../../components/AppHeader';
 import { comprimiVideo480p } from '../../../lib/videoCompress';
 import { pubblicaVideo } from '../../../lib/feed';
+import LoadingSkeleton from '../../../components/LoadingSkeleton';
 
 export default function CaricaVideo() {
   const router = useRouter();
@@ -80,7 +81,7 @@ export default function CaricaVideo() {
     }
   };
 
-  if (loading) return <div className="state-message">Caricamento...</div>;
+  if (loading) return <LoadingSkeleton variant="page" />;
   if (!session) return <div className="state-message">Devi accedere per vedere questa pagina.</div>;
   if (tipoAccount !== 'giocatore') {
     return (
