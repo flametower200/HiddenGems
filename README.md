@@ -31,6 +31,10 @@ supabase/functions/delete-account/index.ts   Edge Function eliminazione account
 7. **Verifica**: in Supabase → Table Editor apri `profiles` — dovresti vedere la tua riga. Se non c'è, esegui `sql/03_diagnostica.sql` e segui i tre casi descritti nei commenti.
 8. Ricarica la bacheca in localhost: ora dovresti vedere il tuo profilo nell'elenco.
 
+## Sessioni di accesso
+
+La sessione di HiddenGems resta salvata nella scheda/finestra del browser in cui accedi. Finché quella scheda è aperta, un aggiornamento della pagina mantiene l'accesso; una nuova finestra richiede invece un accesso separato. Chiudendo la scheda, la sessione viene eliminata.
+
 ## Nota sulla Edge Function
 
 `supabase/functions/delete-account/index.ts` serve solo per l'eliminazione account (Modulo 5) — non è necessaria per far funzionare login/registrazione/bacheca. Deployala solo quando arrivi a implementare le impostazioni account: `supabase functions deploy delete-account`.
