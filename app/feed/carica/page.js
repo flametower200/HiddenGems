@@ -7,9 +7,11 @@ import AppHeader from '../../../components/AppHeader';
 import { comprimiVideo480p } from '../../../lib/videoCompress';
 import { pubblicaVideo } from '../../../lib/feed';
 import LoadingSkeleton from '../../../components/LoadingSkeleton';
+import { useToast } from '../../../components/ToastProvider';
 
 export default function CaricaVideo() {
   const router = useRouter();
+  const notify = useToast();
   const [session, setSession] = useState(null);
   const [tipoAccount, setTipoAccount] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -74,9 +76,11 @@ export default function CaricaVideo() {
         durata: risultatoCompressione.durata,
         didascalia,
       });
+      notify({ type: 'success', message: 'Video pubblicato con successo.' });
       router.push('/feed');
     } catch (err) {
       setErrore('Errore durante la pubblicazione: ' + err.message);
+      notify({ type: 'error', message: `Impossibile pubblicare il video. ${err.message}` });
       setFase('pronto');
     }
   };
@@ -113,14 +117,14 @@ export default function CaricaVideo() {
         {fase === 'scegli' && (
           <label className="btn btn--primary" style={{ cursor: 'pointer' }}>
             Scegli un video
-            <input type="file" accept="video/*" capture="environment" onChange={scegliFile} style={{ display: 'none' }} />
+            <input className="visually-hidden" type="file" accept="video/*" capture="environment" onChange={scegliFile} aria-label="Seleziona un video" />
           </label>
         )}
 
         {fase === 'comprimendo' && (
-          <div className="card card--panel">
+          <div className="card card--panel" role="status" aria-live="polite">
             <p>Compressione in corso... {Math.round(progresso * 100)}%</p>
-            <div style={{ height: 8, background: 'var(--color-line)', borderRadius: 4, overflow: 'hidden' }}>
+            <div role="progressbar" aria-label="Compressione video" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progresso * 100)} style={{ height: 8, background: 'var(--color-line)', borderRadius: 4, overflow: 'hidden' }}>
               <div style={{ height: '100%', width: `${Math.round(progresso * 100)}%`, background: 'var(--color-gold)', transition: 'width 0.2s' }} />
             </div>
           </div>
@@ -129,7 +133,7 @@ export default function CaricaVideo() {
         {(fase === 'pronto' || fase === 'pubblicando') && anteprima && (
           <div className="card card--panel" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div className="upload-video-frame">
-              <video src={anteprima} controls playsInline className="upload-video-frame__video" />
+              <video src={anteprima} controls playsInline width="480" height="854" className="upload-video-frame__video" />
             </div>
             {risultatoCompressione?.tagliato && (
               <p style={{ fontSize: '0.85rem', color: 'var(--color-muted)' }}>
@@ -137,12 +141,12 @@ export default function CaricaVideo() {
               </p>
             )}
             <div className="field">
-              <label className="field__label">Didascalia (opzionale, max 280 caratteri)</label>
-              <textarea value={didascalia} maxLength={280} onChange={(e) => setDidascalia(e.target.value)} rows={3} />
+              <label className="field__label" htmlFor="video-caption">Didascalia (opzionale, max 280 caratteri)</label>
+              <textarea id="video-caption" value={didascalia} maxLength={280} onChange={(e) => setDidascalia(e.target.value)} rows={3} />
             </div>
             <div className="action-row" style={{ margin: 0 }}>
               <button onClick={pubblica} disabled={fase === 'pubblicando'} className="btn btn--primary">
-                {fase === 'pubblicando' ? 'Pubblicazione...' : 'Pubblica'}
+                {fase === 'pubblicando' ? <><span className="button-spinner" aria-hidden="true" /> Pubblicazione…</> : 'Pubblica'}
               </button>
               <button onClick={() => { setFase('scegli'); setAnteprima(null); setRisultatoCompressione(null); setDidascalia(''); }} disabled={fase === 'pubblicando'} className="btn btn--outline">
                 Scegli un altro video

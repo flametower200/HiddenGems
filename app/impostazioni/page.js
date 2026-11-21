@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 import AppHeader from '../../components/AppHeader';
 import { cambiaPassword, eliminaAccount } from '../../lib/accountSettings';
 import { esci } from '../../lib/registration';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
+import { useToast } from '../../components/ToastProvider';
 
 function IconEye({ visible }) {
   return visible ? (
@@ -21,6 +23,7 @@ function IconEye({ visible }) {
 }
 
 export default function Impostazioni() {
+  const router = useRouter();
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [nuovaPassword, setNuovaPassword] = useState('');
@@ -29,6 +32,7 @@ export default function Impostazioni() {
   const [mostraConfermaNuovaPassword, setMostraConfermaNuovaPassword] = useState(false);
   const [salvataggio, setSalvataggio] = useState(false);
   const [eliminando, setEliminando] = useState(false);
+  const notify = useToast();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -42,13 +46,14 @@ export default function Impostazioni() {
     setSalvataggio(true);
     try {
       await cambiaPassword(nuovaPassword, confermaNuovaPassword);
-      alert('Password aggiornata!');
+      notify({ type: 'success', message: 'Password aggiornata con successo.' });
       setNuovaPassword('');
       setConfermaNuovaPassword('');
     } catch (err) {
-      alert('Errore: ' + err.message);
+      notify({ type: 'error', message: 'Impossibile aggiornare la password. ' + err.message });
+    } finally {
+      setSalvataggio(false);
     }
-    setSalvataggio(false);
   };
 
   const handleElimina = async () => {
@@ -56,11 +61,16 @@ export default function Impostazioni() {
     setEliminando(true);
     try {
       await eliminaAccount();
-      alert('Account eliminato.');
+      notify({ type: 'success', message: 'Account eliminato.' });
+      router.replace('/');
     } catch (err) {
-      alert('Errore: ' + err.message + '\n\nSe non hai ancora deployato la Edge Function "delete-account" su Supabase, questa funzione non è ancora disponibile.');
+      notify({
+        type: 'error',
+        message: `Impossibile eliminare l’account. ${err.message} Se la funzione delete-account non è stata distribuita su Supabase, l’operazione non è disponibile.`,
+      });
+    } finally {
+      setEliminando(false);
     }
-    setEliminando(false);
   };
 
   if (loading) return <LoadingSkeleton variant="page" />;
@@ -104,16 +114,16 @@ export default function Impostazioni() {
               <IconEye visible={mostraConfermaNuovaPassword} />
             </button>
           </label>
-          <button type="submit" disabled={salvataggio} className="btn btn--secondary">
-            {salvataggio ? 'Salvataggio...' : 'Aggiorna password'}
+          <button type="submit" disabled={salvataggio} className="btn btn--secondary" aria-busy={salvataggio}>
+            {salvataggio ? <><span className="button-spinner" aria-hidden="true" /> Salvataggio…</> : 'Aggiorna password'}
           </button>
         </form>
 
         <div className="danger-zone">
           <h4>Zona pericolosa</h4>
           <p>Elimina definitivamente il tuo account e tutti i tuoi dati (profilo, chat, messaggi, follow, preferiti).</p>
-          <button onClick={handleElimina} disabled={eliminando} className="btn btn--danger">
-            {eliminando ? 'Eliminazione...' : 'Elimina account'}
+          <button onClick={handleElimina} disabled={eliminando} className="btn btn--danger" aria-busy={eliminando}>
+            {eliminando ? <><span className="button-spinner" aria-hidden="true" /> Eliminazione…</> : 'Elimina account'}
           </button>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { Inter, Manrope } from "next/font/google";
+import { ToastProvider } from "../components/ToastProvider";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -21,7 +22,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="it" className={`${manrope.variable} ${inter.variable}`}>
-      <body>{children}</body>
+      <body><ToastProvider>{children}</ToastProvider></body>
     </html>
   );
 }

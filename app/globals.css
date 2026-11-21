@@ -206,12 +206,12 @@ a { color: var(--color-pitch-light); text-decoration: none; }
 
 .container {
   width: 100%;
-  max-width: 1200px;
+  max-width: 1152px;
   margin: 0 auto;
   padding: 24px 20px 60px;
 }
 
-.container--wide { max-width: 1200px; }
+.container--wide { max-width: 1152px; }
 
 .state-message {
   padding: 60px 20px;
@@ -1632,7 +1632,7 @@ a.btn:active,
 .profile-screen__container,
 .settings-screen,
 .messages-screen__container {
-  max-width: 1200px;
+  max-width: 1152px;
 }
 
 .card,
@@ -2149,5 +2149,99 @@ a.btn:active,
   .app-header__inner {
     padding-right: 14px;
     padding-left: 14px;
+  }
+}
+
+.toast-stack {
+  position: fixed;
+  z-index: 1000;
+  top: 16px;
+  right: max(16px, calc((100vw - 1152px) / 2));
+  display: grid;
+  width: min(390px, calc(100vw - 32px));
+  gap: 10px;
+  pointer-events: none;
+}
+
+.toast {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) 28px;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.14);
+  animation: toast-enter 180ms var(--motion-spring) both;
+  pointer-events: auto;
+}
+
+.toast > svg { width: 20px; height: 20px; }
+.toast > span { overflow-wrap: anywhere; font-size: 0.875rem; line-height: 1.4; }
+.toast > button {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: currentColor;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.toast--success {
+  background: #163022;
+  color: #fff;
+}
+
+.toast--error {
+  border-color: #fecaca;
+  background: #fff;
+  color: #991b1b;
+}
+
+.button-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  vertical-align: -2px;
+  animation: button-spin 650ms linear infinite;
+}
+
+@keyframes button-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes toast-enter {
+  from { opacity: 0; transform: translate3d(0, -8px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+button:disabled,
+.btn:disabled,
+.search-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+label.btn:focus-within {
+  outline: 2px solid rgba(22, 48, 34, 0.45);
+  outline-offset: 3px;
+}
+
+@media (max-width: 640px) {
+  .toast-stack {
+    top: auto;
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    width: auto;
   }
 }

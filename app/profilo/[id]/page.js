@@ -11,6 +11,7 @@ import { avviaConversazione } from '../../../lib/chat';
 import { segui, smettiDiSeguire, aggiungiPreferito, rimuoviPreferito, controllaStato, getContatoriProfilo } from '../../../lib/social';
 import { caricaProfiloCompleto } from '../../../lib/profileHelpers';
 import { caricaRosaSocieta } from '../../../lib/clubRoster';
+import { useToast } from '../../../components/ToastProvider';
 
 function etaDaData(dataNascita) {
   if (!dataNascita) return null;
@@ -39,6 +40,7 @@ export default function ProfiloPubblico() {
   const [squadraAttuale, setSquadraAttuale] = useState(null);
   const [rosaGiocatori, setRosaGiocatori] = useState([]);
   const [rosaAllenatori, setRosaAllenatori] = useState([]);
+  const notify = useToast();
 
   const carica = useCallback(async () => {
     setLoading(true);
@@ -87,8 +89,10 @@ export default function ProfiloPubblico() {
     try {
       await avviaConversazione(id);
       setErroreAzione('Richiesta inviata. Potrai scrivere quando verrà accettata.');
+      notify({ type: 'success', message: 'Richiesta di chat inviata.' });
     } catch (err) {
       setErroreAzione(`Non è stato possibile inviare la richiesta: ${err.message}`);
+      notify({ type: 'error', message: `Impossibile inviare la richiesta. ${err.message}` });
     } finally {
       setInviandoRichiesta(false);
     }
@@ -111,12 +115,14 @@ export default function ProfiloPubblico() {
     setContatori((current) => ({ ...current, [conteggio]: Math.max(0, (current[conteggio] || 0) + delta) }));
     try {
       await (attivoPrima ? rimuoviStato(id) : cambiaStato(id));
-      const c = await getContatoriProfilo(id);
-      setContatori(c);
+      notify({ type: 'success', message: tipo === 'segui'
+        ? (attivoPrima ? 'Hai smesso di seguire il profilo.' : 'Profilo seguito con successo.')
+        : (attivoPrima ? 'Profilo rimosso dai preferiti.' : 'Profilo aggiunto ai preferiti.') });
     } catch (err) {
       setStato({ seguito: seguitoPrima, preferito: preferitoPrima });
       setContatori(contatoriPrima);
       setErroreAzione(`Modifica non riuscita. Riprova. ${err.message}`);
+      notify({ type: 'error', message: `Modifica non riuscita. ${err.message}` });
     } finally {
       setAzioneSociale('');
     }
@@ -160,14 +166,14 @@ export default function ProfiloPubblico() {
         </div>
 
         <div className="action-row">
-          <button onClick={handleMessaggi} disabled={inviandoRichiesta} className="btn btn--secondary">
-            {inviandoRichiesta ? 'Invio...' : '✉ Messaggi'}
+          <button onClick={handleMessaggi} disabled={inviandoRichiesta} className="btn btn--secondary" aria-busy={inviandoRichiesta}>
+            {inviandoRichiesta ? <><span className="button-spinner" aria-hidden="true" /> Invio…</> : '✉ Messaggi'}
           </button>
-          <button onClick={() => toggleSocial('segui')} disabled={Boolean(azioneSociale)} className={stato.seguito ? 'btn btn--outline' : 'btn btn--primary'}>
-            {stato.seguito ? '✓ Segui già' : '+ Segui'}
+          <button onClick={() => toggleSocial('segui')} disabled={Boolean(azioneSociale)} className={stato.seguito ? 'btn btn--outline' : 'btn btn--primary'} aria-busy={azioneSociale === 'segui'}>
+            {azioneSociale === 'segui' ? <><span className="button-spinner" aria-hidden="true" /> Aggiorno…</> : stato.seguito ? '✓ Segui già' : '+ Segui'}
           </button>
-          <button onClick={() => toggleSocial('preferito')} disabled={Boolean(azioneSociale)} className={stato.preferito ? 'btn btn--outline' : 'btn btn--primary'}>
-            {stato.preferito ? '★ Nei preferiti' : '☆ Aggiungi ai preferiti'}
+          <button onClick={() => toggleSocial('preferito')} disabled={Boolean(azioneSociale)} className={stato.preferito ? 'btn btn--outline' : 'btn btn--primary'} aria-busy={azioneSociale === 'preferito'}>
+            {azioneSociale === 'preferito' ? <><span className="button-spinner" aria-hidden="true" /> Aggiorno…</> : stato.preferito ? '★ Nei preferiti' : '☆ Aggiungi ai preferiti'}
           </button>
         </div>
         {erroreAzione && (

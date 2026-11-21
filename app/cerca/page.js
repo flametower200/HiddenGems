@@ -6,6 +6,7 @@ import AppHeader from '../../components/AppHeader';
 import ProfileCard from '../../components/ProfileCard';
 import ItalianLocationFields from '../../components/ItalianLocationFields';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
+import { useToast } from '../../components/ToastProvider';
 import { cerca } from '../../lib/search';
 import {
   COACH_LICENSE_OPTIONS,
@@ -38,6 +39,7 @@ export default function Cerca() {
   const [testoRicerca, setTestoRicerca] = useState('');
   const [filtri, setFiltri] = useState(FILTRI_VUOTI);
   const [risultati, setRisultati] = useState(null);
+  const notify = useToast();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -77,7 +79,9 @@ export default function Cerca() {
       const { risultati: r } = await cerca(tipoAccount, { testoRicerca: testoRicerca || undefined, filtri: filtriPuliti });
       setRisultati(r);
     } catch (err) {
-      setErroreRicerca('Errore nella ricerca: ' + err.message);
+      const message = 'Errore nella ricerca: ' + err.message;
+      setErroreRicerca(message);
+      notify({ type: 'error', message });
     } finally {
       setCercando(false);
     }
@@ -122,8 +126,8 @@ export default function Cerca() {
               <span className="field__label">Nome o cognome</span>
               <input id="search-name" type="search" placeholder="Es. Rossi, Milano…" value={testoRicerca} onChange={(e) => setTestoRicerca(e.target.value)} />
             </label>
-            <button type="submit" disabled={cercando} className="search-submit">
-              {cercando ? 'Cerco…' : 'Cerca'}
+            <button type="submit" disabled={cercando} className="search-submit" aria-busy={cercando}>
+              {cercando ? <><span className="button-spinner" aria-hidden="true" /> Cerco…</> : 'Cerca'}
             </button>
           </div>
 

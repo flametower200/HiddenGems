@@ -21,7 +21,7 @@ export default function UserAvatar({ src, name, size = 48, className = '' }) {
       aria-hidden="true"
     >
       {src && failedSrc !== src ? (
-        <Image src={src} alt="" width={size} height={size} unoptimized className="user-avatar__image" onError={() => setFailedSrc(src)} />
+        <Image src={src} alt="" width={size} height={size} sizes={`${size}px`} loading="lazy" className="user-avatar__image" onError={() => setFailedSrc(src)} />
       ) : (
         <span className="user-avatar__initials">{initials}</span>
       )}

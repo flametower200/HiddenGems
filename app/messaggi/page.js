@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase';
 import AppHeader from '../../components/AppHeader';
 import UserAvatar from '../../components/UserAvatar';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
+import { useToast } from '../../components/ToastProvider';
 import {
   getChatInApprovazione, getChatApprovate, accettaChat, rifiutaChat,
   getMessaggi, inviaMessaggio, sottoscriviMessaggi,
@@ -34,6 +35,8 @@ export default function Messaggi() {
   const [messaggi, setMessaggi] = useState([]);
   const [testo, setTesto] = useState('');
   const bottomRef = useRef(null);
+  const notify = useToast();
+  const [chatInAzione, setChatInAzione] = useState(null);
 
   const caricaListe = useCallback(async (mostraCaricamento = true) => {
     if (mostraCaricamento) setLoading(true);
@@ -99,23 +102,44 @@ export default function Messaggi() {
   }, [messaggi]);
 
   const handleAccetta = async (chatId) => {
+    if (chatInAzione) return;
+    const richiesta = inApprovazione.find((chat) => chat.id === chatId);
+    if (!richiesta) return;
+    setChatInAzione(chatId);
+    setInApprovazione((current) => current.filter((chat) => chat.id !== chatId));
+    setApprovate((current) => [{ ...richiesta, status: 'accepted' }, ...current]);
+    setTab('approvate');
     try {
       setErroreCaricamento('');
       await accettaChat(chatId);
-      await caricaListe();
-      setTab('approvate');
+      notify({ type: 'success', message: 'Richiesta di chat accettata.' });
+      void caricaListe(false);
     } catch (err) {
-      setErroreCaricamento(`Non è stato possibile accettare la richiesta. ${err.message}`);
+      setInApprovazione((current) => [richiesta, ...current]);
+      setApprovate((current) => current.filter((chat) => chat.id !== chatId));
+      setTab('approvazione');
+      notify({ type: 'error', message: `Non è stato possibile accettare la richiesta. ${err.message}` });
+    } finally {
+      setChatInAzione(null);
     }
   };
 
   const handleRifiuta = async (chatId) => {
+    if (chatInAzione) return;
+    const richiesta = inApprovazione.find((chat) => chat.id === chatId);
+    if (!richiesta) return;
+    setChatInAzione(chatId);
+    setInApprovazione((current) => current.filter((chat) => chat.id !== chatId));
     try {
       setErroreCaricamento('');
       await rifiutaChat(chatId);
-      await caricaListe();
+      notify({ type: 'success', message: 'Richiesta di chat rifiutata.' });
+      void caricaListe(false);
     } catch (err) {
-      setErroreCaricamento(`Non è stato possibile rifiutare la richiesta. ${err.message}`);
+      setInApprovazione((current) => [richiesta, ...current]);
+      notify({ type: 'error', message: `Non è stato possibile rifiutare la richiesta. ${err.message}` });
+    } finally {
+      setChatInAzione(null);
     }
   };
 
@@ -211,8 +235,12 @@ export default function Messaggi() {
                 <div key={chat.id} className="message-request">
                   <span className="message-request__copy"><strong>{chat.mittente?.nome} {chat.mittente?.cognome}</strong><span>Vuole iniziare una conversazione</span></span>
                   <div className="message-request__actions">
-                    <button onClick={() => handleAccetta(chat.id)} className="btn btn--sm btn--primary">Accetta</button>
-                    <button onClick={() => handleRifiuta(chat.id)} className="btn btn--sm btn--outline">Rifiuta</button>
+                    <button onClick={() => handleAccetta(chat.id)} disabled={Boolean(chatInAzione)} className="btn btn--sm btn--primary">
+                      {chatInAzione === chat.id ? <><span className="button-spinner" aria-hidden="true" /> Accetto…</> : 'Accetta'}
+                    </button>
+                    <button onClick={() => handleRifiuta(chat.id)} disabled={Boolean(chatInAzione)} className="btn btn--sm btn--outline">
+                      {chatInAzione === chat.id ? <><span className="button-spinner" aria-hidden="true" /> Aggiorno…</> : 'Rifiuta'}
+                    </button>
                   </div>
                 </div>
               ))
@@ -266,7 +294,9 @@ export default function Messaggi() {
             {erroreInvio && <p className="form-error" role="alert">{erroreInvio}</p>}
             <form onSubmit={handleInvia} className="chat-composer">
               <input type="text" maxLength={2000} value={testo} onChange={(e) => setTesto(e.target.value)} placeholder="Scrivi un messaggio..." aria-label="Scrivi un messaggio" />
-              <button type="submit" disabled={inviandoMessaggio || !testo.trim()} className="btn btn--primary">{inviandoMessaggio ? 'Invio…' : 'Invia'}</button>
+              <button type="submit" disabled={inviandoMessaggio || !testo.trim()} className="btn btn--primary">
+                {inviandoMessaggio ? <><span className="button-spinner" aria-hidden="true" /> Invio…</> : 'Invia'}
+              </button>
             </form>
           </div>
         )}

@@ -13,6 +13,7 @@ import { getContatoriProfilo } from '../../lib/social';
 import { caricaProfiloCompleto, invalidaCacheProfili } from '../../lib/profileHelpers';
 import LanguagePicker from '../../components/LanguagePicker';
 import { caricaRosaSocieta, aggiungiMembroRosa, rimuoviMembroRosa } from '../../lib/clubRoster';
+import { useToast } from '../../components/ToastProvider';
 import {
   COACH_LICENSE_OPTIONS,
   CONTRACT_STATUS_OPTIONS,
@@ -87,6 +88,7 @@ export default function MioProfilo() {
   const [membroRosaId, setMembroRosaId] = useState('');
   const [membroRosaRuolo, setMembroRosaRuolo] = useState('giocatore');
   const [squadraAttuale, setSquadraAttuale] = useState(null);
+  const notify = useToast();
 
   const caricaProfilo = useCallback(async (userId) => {
     setLoading(true);
@@ -176,11 +178,12 @@ export default function MioProfilo() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 3 * 1024 * 1024) {
-      alert('Immagine troppo grande: massimo 3MB.');
+      notify({ type: 'error', message: 'Immagine troppo grande: massimo 3 MB.' });
+      e.target.value = '';
       return;
     }
     if (!AVATAR_FORMATS[file.type]) {
-      alert('Formato non supportato. Scegli un’immagine JPEG, PNG o WebP.');
+      notify({ type: 'error', message: 'Formato non supportato. Scegli un’immagine JPEG, PNG o WebP.' });
       e.target.value = '';
       return;
     }
@@ -195,10 +198,12 @@ export default function MioProfilo() {
       if (errUpload) throw errUpload;
       const { data: pubblico } = supabase.storage.from('avatars').getPublicUrl(percorso);
       setFotoUrl(pubblico.publicUrl);
+      notify({ type: 'success', message: 'Foto profilo caricata. Salva le modifiche per applicarla.' });
     } catch (err) {
-      alert('Errore caricamento foto: ' + err.message + '\n\nSe non hai ancora eseguito sql/05_storage_avatars.sql su Supabase, l\'upload non funziona finché non lo fai.');
+      notify({ type: 'error', message: `Errore caricamento foto: ${err.message}. Verifica che il bucket avatars sia configurato su Supabase.` });
+    } finally {
+      setCaricandoFoto(false);
     }
-    setCaricandoFoto(false);
   };
 
   const aggiungiRosa = async () => {
@@ -210,7 +215,7 @@ export default function MioProfilo() {
       setRosaAllenatori(roster.allenatori);
       setMembroRosaId('');
     } catch (error) {
-      alert('Errore aggiornamento rosa: ' + error.message);
+      notify({ type: 'error', message: `Errore aggiornamento rosa: ${error.message}` });
     }
   };
 
@@ -221,28 +226,25 @@ export default function MioProfilo() {
       setRosaGiocatori(roster.giocatori);
       setRosaAllenatori(roster.allenatori);
     } catch (error) {
-      alert('Errore aggiornamento rosa: ' + error.message);
+      notify({ type: 'error', message: `Errore aggiornamento rosa: ${error.message}` });
     }
   };
 
   const salva = async () => {
     setSalvataggio(true);
     setErroreCarriera('');
+    try {
     if (!regioneProfilo || !provinciaProfilo) {
-      setSalvataggio(false);
-      alert('Seleziona la regione e la provincia del profilo.');
+      notify({ type: 'error', message: 'Seleziona la regione e la provincia del profilo.' });
       return;
     }
     if (profilo.tipo_account === 'giocatore' && !ruoloPrincipale) {
-      setSalvataggio(false);
-      alert('Seleziona il ruolo specifico del giocatore.');
+      notify({ type: 'error', message: 'Seleziona il ruolo specifico del giocatore.' });
       return;
     }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      setSalvataggio(false);
-      alert('Devi effettuare nuovamente l\'accesso.');
-      return;
+      throw new Error('Devi effettuare nuovamente l’accesso.');
     }
     const esperienzeIncomplete = carriera.some((experience) => (
       !experience.title.trim()
@@ -252,7 +254,6 @@ export default function MioProfilo() {
     ));
     if (esperienzeIncomplete) {
       setErroreCarriera('Completa ogni esperienza: inserisci una descrizione entro 30 caratteri e una data di inizio; la data di fine deve seguire quella di inizio.');
-      setSalvataggio(false);
       return;
     }
 
@@ -319,14 +320,18 @@ export default function MioProfilo() {
       }).eq('profile_id', user.id));
     }
 
-    setSalvataggio(false);
     if (errProfilo || errDettaglio) {
-      alert('Errore salvataggio: ' + (errProfilo?.message || errDettaglio?.message));
-      return;
+      throw new Error(errProfilo?.message || errDettaglio?.message);
     }
     invalidaCacheProfili();
     setModifica(false);
-    caricaProfilo(user.id);
+    await caricaProfilo(user.id);
+    notify({ type: 'success', message: 'Profilo aggiornato con successo.' });
+    } catch (error) {
+      notify({ type: 'error', message: `Errore salvataggio: ${error.message}` });
+    } finally {
+      setSalvataggio(false);
+    }
   };
 
   if (loading) return <LoadingSkeleton variant="profile" />;
@@ -446,7 +451,7 @@ export default function MioProfilo() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <UserAvatar src={fotoUrl} name={`${profilo.nome} ${profilo.cognome || ''}`} size={56} className="avatar" />
                 <label className="btn btn--outline btn--sm" style={{ cursor: 'pointer' }}>
-                  {caricandoFoto ? 'Caricamento...' : 'Scegli immagine'}
+                  {caricandoFoto ? <><span className="button-spinner" aria-hidden="true" /> Caricamento…</> : 'Scegli immagine'}
                   <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleCaricaFoto} disabled={caricandoFoto} style={{ display: 'none' }} />
                 </label>
               </div>
@@ -572,8 +577,8 @@ export default function MioProfilo() {
             )}
 
             <div className="action-row" style={{ marginTop: 6, marginBottom: 0 }}>
-              <button onClick={salva} disabled={salvataggio} className="btn btn--primary">
-                {salvataggio ? 'Salvataggio...' : 'Salva'}
+              <button onClick={salva} disabled={salvataggio} className="btn btn--primary" aria-busy={salvataggio}>
+                {salvataggio ? <><span className="button-spinner" aria-hidden="true" /> Salvataggio…</> : 'Salva'}
               </button>
               <button onClick={() => { setFotoUrl(profilo.foto_url || ''); setModifica(false); }} className="btn btn--outline">Annulla</button>
             </div>

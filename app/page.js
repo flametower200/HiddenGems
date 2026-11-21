@@ -7,6 +7,7 @@ import LanguagePicker from '../components/LanguagePicker';
 import ItalianLocationFields from '../components/ItalianLocationFields';
 import PlayerPositionFields from '../components/PlayerPositionFields';
 import LoadingSkeleton from '../components/LoadingSkeleton';
+import { useToast } from '../components/ToastProvider';
 import Feed from './feed/page';
 import {
   COACH_LICENSE_OPTIONS,
@@ -21,6 +22,7 @@ const PIEDI = [
 ];
 const ANNATE = ['U14', 'U15', 'U16', 'U17', 'U18', 'U19', 'Prima Squadra'];
 export default function Home() {
+  const notify = useToast();
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState('login');
@@ -111,7 +113,7 @@ export default function Home() {
       });
 
       if (richiedeConfermaEmail) {
-        alert('Registrazione avviata! Controlla la tua email per confermare l\'account prima di accedere.');
+        notify({ type: 'success', message: 'Registrazione avviata. Controlla la tua email per confermare l’account.' });
         setMode('login');
       }
     } catch (err) {
@@ -278,7 +280,7 @@ export default function Home() {
               )}
 
               <button type="submit" disabled={loading} className="btn btn--primary btn--block">
-                {loading ? 'Attendi…' : mode === 'login' ? 'Accedi' : 'Crea account'}
+                {loading ? <><span className="button-spinner" aria-hidden="true" /> Attendi…</> : mode === 'login' ? 'Accedi' : 'Crea account'}
               </button>
             </form>
         </div>

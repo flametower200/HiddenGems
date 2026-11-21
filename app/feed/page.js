@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase';
 import AppHeader from '../../components/AppHeader';
 import UserAvatar from '../../components/UserAvatar';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
+import { useToast } from '../../components/ToastProvider';
 import { getFeed, metti_like, togli_like, getCommenti, aggiungiCommento, eliminaVideo } from '../../lib/feed';
 
 function IconLike({ active }) {
@@ -42,6 +43,7 @@ function IconDelete() {
 }
 
 function PostCard({ post, sessionUserId, onDelete }) {
+  const notify = useToast();
   const [miPiace, setMiPiace] = useState(post.miPiace);
   const [numeroLike, setNumeroLike] = useState(post.numeroLike);
   const [likeInviato, setLikeInviato] = useState(false);
@@ -75,6 +77,7 @@ function PostCard({ post, sessionUserId, onDelete }) {
       setMiPiace(previousMiPiace);
       setNumeroLike(previousNumeroLike);
       setErrorePost(`Non è stato possibile aggiornare il "mi piace". ${err.message}`);
+      notify({ type: 'error', message: 'Impossibile aggiornare il "mi piace". Riprova.' });
     } finally {
       setLikeInviato(false);
     }
@@ -117,6 +120,7 @@ function PostCard({ post, sessionUserId, onDelete }) {
       setCommenti((prev) => prev.filter((commento) => commento.id !== idOttimistico));
       setNuovoCommento(testoCommento);
       setErroreCommenti(`Commento non inviato. Riprova. ${err.message}`);
+      notify({ type: 'error', message: 'Commento non inviato. Riprova.' });
     } finally {
       setInviandoCommento(false);
     }
@@ -128,8 +132,10 @@ function PostCard({ post, sessionUserId, onDelete }) {
     try {
       await eliminaVideo(post.id);
       onDelete(post.id);
+      notify({ type: 'success', message: 'Video eliminato con successo.' });
     } catch (err) {
       setErrorePost(`Non è stato possibile eliminare il video. ${err.message}`);
+      notify({ type: 'error', message: 'Impossibile eliminare il video. Riprova.' });
       setEliminando(false);
     }
   };
@@ -151,20 +157,20 @@ function PostCard({ post, sessionUserId, onDelete }) {
         </Link>
         {isAuthor && (
           <button type="button" className="feed-post__delete" onClick={elimina} disabled={eliminando} aria-label="Elimina il tuo video" title="Elimina video">
-            <IconDelete />
+            {eliminando ? <span className="button-spinner" aria-hidden="true" /> : <IconDelete />}
             <span>{eliminando ? 'Eliminazione…' : 'Elimina'}</span>
           </button>
         )}
       </header>
 
       <div className="feed-post__video-wrap">
-        <video src={post.video_url} controls playsInline preload="none" className="feed-post__video" />
+        <video src={post.video_url} controls playsInline preload="none" width="480" height="854" className="feed-post__video" />
       </div>
 
       <div className="feed-post__body">
         {post.didascalia && <p className="feed-post__caption">{post.didascalia}</p>}
         <div className="feed-post__actions">
-          <button type="button" onClick={toggleLike} disabled={likeInviato} className={`feed-post__action${miPiace ? ' is-active' : ''}`} aria-pressed={miPiace} aria-busy={likeInviato}>
+          <button type="button" onClick={toggleLike} disabled={likeInviato} className={`feed-post__action${miPiace ? ' is-active' : ''}`} aria-label={miPiace ? 'Rimuovi mi piace' : 'Metti mi piace'} aria-pressed={miPiace} aria-busy={likeInviato}>
             <IconLike active={miPiace} />
             <span>{numeroLike}</span>
           </button>
@@ -198,8 +204,10 @@ function PostCard({ post, sessionUserId, onDelete }) {
               </div>
             )}
             <form onSubmit={invia} className="feed-comments__form">
-              <input type="text" maxLength={500} placeholder="Scrivi un commento..." value={nuovoCommento} onChange={(e) => setNuovoCommento(e.target.value)} />
-              <button type="submit" disabled={inviandoCommento || !nuovoCommento.trim()} className="btn btn--secondary btn--sm">{inviandoCommento ? 'Invio…' : 'Invia'}</button>
+              <input type="text" maxLength={500} placeholder="Scrivi un commento..." aria-label="Scrivi un commento" value={nuovoCommento} onChange={(e) => setNuovoCommento(e.target.value)} />
+              <button type="submit" disabled={inviandoCommento || !nuovoCommento.trim()} className="btn btn--secondary btn--sm" aria-busy={inviandoCommento}>
+                {inviandoCommento ? <><span className="button-spinner" aria-hidden="true" /> Invio…</> : 'Invia'}
+              </button>
             </form>
           </div>
         )}
