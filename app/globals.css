@@ -2334,7 +2334,7 @@ label.btn:focus-within {
   grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
   align-items: center;
   gap: clamp(32px, 5vw, 72px);
-  padding: 96px 0;
+  padding: 48px 0 64px;
 }
 
 .landing-hero__copy { max-width: 610px; }
@@ -2364,7 +2364,7 @@ label.btn:focus-within {
   font-size: clamp(3.2rem, 6.7vw, 5.85rem);
   font-weight: 750;
   letter-spacing: -0.075em;
-  line-height: 0.98;
+  line-height: 0.94;
   text-wrap: balance;
 }
 
@@ -2372,7 +2372,7 @@ label.btn:focus-within {
 
 .landing-hero__description {
   max-width: 530px;
-  margin: 25px 0 0;
+  margin: 18px 0 0;
   color: #526158;
   font-size: clamp(1rem, 1.35vw, 1.12rem);
   line-height: 1.75;
@@ -2383,7 +2383,7 @@ label.btn:focus-within {
   flex-wrap: wrap;
   align-items: center;
   gap: 12px 22px;
-  margin-top: 30px;
+  margin-top: 22px;
 }
 
 .landing-primary-cta { min-height: 50px; padding: 0 23px; }
@@ -2400,8 +2400,8 @@ label.btn:focus-within {
   display: grid;
   min-width: 0;
   align-content: space-between;
-  gap: 24px;
-  padding: clamp(16px, 2.4vw, 24px);
+  gap: 16px;
+  padding: clamp(14px, 1.5vw, 18px);
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 20px;
   background: #163022;
@@ -2426,8 +2426,10 @@ label.btn:focus-within {
 .landing-player-preview {
   display: grid;
   min-width: 0;
-  gap: 14px;
-  padding: clamp(16px, 2.4vw, 24px);
+  width: min(100%, 380px);
+  justify-self: center;
+  gap: 10px;
+  padding: clamp(14px, 1.5vw, 16px);
   border: 1px solid #e1e8e2;
   border-radius: 16px;
   background: #fff;
@@ -2654,7 +2656,7 @@ label.btn:focus-within {
   grid-template-columns: 1fr 0.75fr;
   gap: 60px;
   align-items: end;
-  padding: 96px 0;
+  padding: 64px 0;
   border-top: 1px solid #e1e8e2;
 }
 .landing-intro__heading .landing-eyebrow { margin-bottom: 16px; }
@@ -2766,7 +2768,9 @@ label.btn:focus-within {
 .landing-footer {
   display: flex;
   justify-content: space-between;
-  padding: 22px 0 30px;
+  margin-top: 64px;
+  padding: 32px 0 40px;
+  border-top: 1px solid #e2e8f0;
   color: #748178;
   font-size: 0.73rem;
 }
@@ -2789,7 +2793,7 @@ label.btn:focus-within {
     min-height: 0;
     grid-template-columns: minmax(0, 1fr) minmax(310px, 0.8fr);
     gap: 32px;
-    padding: 96px 0;
+    padding: 48px 0 64px;
   }
   .landing-hero h1 { font-size: clamp(3rem, 7vw, 4.7rem); }
   .landing-intro { gap: 32px; }
@@ -2805,13 +2809,13 @@ label.btn:focus-within {
   .landing-header__actions { flex-shrink: 0; gap: 4px; }
   .landing-nav-link,
   .landing-nav-cta { min-height: 40px; padding: 0 8px; font-size: 0.75rem; }
-  .landing-hero { grid-template-columns: minmax(0, 1fr); gap: 36px; padding: 96px 0; }
+  .landing-hero { grid-template-columns: minmax(0, 1fr); gap: 36px; padding: 48px 0 64px; }
   .landing-hero h1 { max-width: 520px; font-size: clamp(3.3rem, 15vw, 5rem); }
   .landing-hero__description { margin-top: 19px; font-size: 0.97rem; }
   .landing-hero__actions { gap: 10px 16px; margin-top: 24px; }
   .landing-primary-cta { min-height: 46px; padding: 0 18px; font-size: 0.82rem; }
   .landing-hero__visual { min-height: 0; }
-  .landing-intro { grid-template-columns: minmax(0, 1fr); gap: 18px; padding: 96px 0; }
+  .landing-intro { grid-template-columns: minmax(0, 1fr); gap: 18px; padding: 64px 0; }
   .landing-intro h2,
   .landing-closing h2 { font-size: clamp(2.1rem, 10vw, 3rem); }
   .landing-intro > p { font-size: 0.9rem; }
