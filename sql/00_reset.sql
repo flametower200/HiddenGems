@@ -24,6 +24,7 @@ drop table if exists public.profiles cascade;
 
 drop function if exists public.handle_new_user() cascade;
 drop function if exists public.sync_club_email_verification() cascade;
+drop function if exists public.prevent_self_verification_changes() cascade;
 drop function if exists public.check_squadra_is_societa() cascade;
 drop function if exists public.touch_chat_updated_at() cascade;
 -- versione precedente sostituita dal trigger — la cancella se esiste ancora

@@ -304,39 +304,6 @@ create trigger trg_sync_club_roster_delete
   for each row execute function public.sync_club_roster();
 
 
--- ---------------------------------------------------------------------
--- 9. VERIFICA EMAIL OBBLIGATORIA PER LE SOCIETÀ
--- Supabase Auth gestisce la conferma email a livello di progetto (globale),
--- non per singolo tipo di utente. Per rendere la verifica "obbligatoria
--- solo per le società" a livello applicativo, sincronizziamo lo stato di
--- conferma email di auth.users dentro club_details.verificato tramite
--- un trigger su auth.users. L'app poi blocca le funzionalità di società
--- non verificate finché club_details.verificato non è true.
--- ---------------------------------------------------------------------
-create or replace function public.sync_club_email_verification()
-returns trigger
-language plpgsql
-security definer
-as $$
-begin
-  if new.email_confirmed_at is not null and (old.email_confirmed_at is null) then
-    update public.club_details
-       set verificato = true
-     where profile_id = new.id;
-    update public.coach_details
-       set verificato = true
-     where profile_id = new.id;
-  end if;
-  return new;
-end;
-$$;
-
-drop trigger if exists trg_sync_club_email_verification on auth.users;
-create trigger trg_sync_club_email_verification
-  after update of email_confirmed_at on auth.users
-  for each row execute function public.sync_club_email_verification();
-
-
 -- =====================================================================
 -- 10. ROW LEVEL SECURITY (RLS)
 -- =====================================================================

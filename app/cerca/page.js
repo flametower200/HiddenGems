@@ -24,7 +24,7 @@ const ANNATE = ['U14', 'U15', 'U16', 'U17', 'U18', 'U19', 'Prima Squadra'];
 const FILTRI_VUOTI = {
   ruolo: '', ruoloCategoria: '', ruoloSecondario: '', piede: '', genere: '', inCercaSquadra: undefined, statoContratto: '',
   lingua: '', etaMin: '', etaMax: '',
-  patentino: '', moduloPreferito: '', inCercaGiocatori: undefined, verificato: undefined,
+  patentino: '', moduloPreferito: '', inCercaGiocatori: undefined,
   regione: '', provincia: '',
   categoria: '', annataSquadra: '', genereSquadra: '', inCercaAllenatori: undefined, palmares: '',
   cercaPatentino: '', cercaFormazione: '', cercaLingua: '',
@@ -242,10 +242,6 @@ export default function Cerca() {
                 <input type="checkbox" checked={!!filtri.inCercaGiocatori} onChange={(e) => aggiorna('inCercaGiocatori', e.target.checked || undefined)} />
                 Solo allenatori in cerca di giocatori
               </label>
-              <label className="checkbox-field">
-                <input type="checkbox" checked={!!filtri.verificato} onChange={(e) => aggiorna('verificato', e.target.checked || undefined)} />
-                Solo account verificati
-              </label>
             </div>
           )}
 
@@ -289,10 +285,6 @@ export default function Cerca() {
               <label className="checkbox-field">
                 <input type="checkbox" checked={!!filtri.inCercaAllenatori} onChange={(e) => aggiorna('inCercaAllenatori', e.target.checked || undefined)} />
                 Solo società in cerca di allenatori
-              </label>
-              <label className="checkbox-field">
-                <input type="checkbox" checked={!!filtri.verificato} onChange={(e) => aggiorna('verificato', e.target.checked || undefined)} />
-                Solo società verificata
               </label>
             </div>
           )}

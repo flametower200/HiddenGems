@@ -109,25 +109,41 @@ alter table public.club_details
   add column if not exists cerca_formazione text,
   add column if not exists cerca_lingua text;
 
-create or replace function public.sync_club_email_verification()
+drop trigger if exists trg_sync_club_email_verification on auth.users;
+drop function if exists public.sync_club_email_verification();
+
+update public.coach_details set verificato = false where verificato;
+update public.scout_details set verificato = false where verificato;
+update public.club_details set verificato = false where verificato;
+
+create or replace function public.prevent_self_verification_changes()
 returns trigger
 language plpgsql
-security definer
-set search_path = public
+set search_path = ''
 as $$
 begin
-  if new.email_confirmed_at is not null and (old.email_confirmed_at is null) then
-    update public.club_details set verificato = true where profile_id = new.id;
-    update public.coach_details set verificato = true where profile_id = new.id;
+  if auth.role() = 'authenticated' and new.verificato is distinct from old.verificato then
+    raise exception 'La verifica del profilo richiede una revisione amministrativa.'
+      using errcode = '42501';
   end if;
   return new;
 end;
 $$;
 
-drop trigger if exists trg_sync_club_email_verification on auth.users;
-create trigger trg_sync_club_email_verification
-  after update of email_confirmed_at on auth.users
-  for each row execute function public.sync_club_email_verification();
+drop trigger if exists trg_prevent_self_coach_verification on public.coach_details;
+create trigger trg_prevent_self_coach_verification
+  before update of verificato on public.coach_details
+  for each row execute function public.prevent_self_verification_changes();
+
+drop trigger if exists trg_prevent_self_scout_verification on public.scout_details;
+create trigger trg_prevent_self_scout_verification
+  before update of verificato on public.scout_details
+  for each row execute function public.prevent_self_verification_changes();
+
+drop trigger if exists trg_prevent_self_club_verification on public.club_details;
+create trigger trg_prevent_self_club_verification
+  before update of verificato on public.club_details
+  for each row execute function public.prevent_self_verification_changes();
 
 create table if not exists public.club_roster (
   club_id uuid not null references public.club_details(profile_id) on delete cascade,

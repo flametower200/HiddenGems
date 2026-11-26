@@ -19,7 +19,7 @@ const SCARTO_MULTIPART_BYTES = 64 * 1024;
 
 function creaClientUtente(bearerToken) {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
-    global: { headers: { Authorization: Bearer  } },
+    global: { headers: { Authorization: `Bearer ${bearerToken}` } },
   });
 }
 

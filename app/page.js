@@ -198,7 +198,7 @@ export default function Home() {
             <aside className="landing-hero__visual" aria-label="Anteprima scheda giocatore HiddenGems">
               <div className="landing-visual__topline">
                 <span>HIDDEN GEMS / ITALIA</span>
-                <span>ANTEPRIMA PROFILO</span>
+                <span className="landing-visual__example-badge">ESEMPIO ILLUSTRATIVO</span>
               </div>
               <article className="landing-player-preview">
                 <div className="landing-player-preview__header">
@@ -218,7 +218,7 @@ export default function Home() {
                 <div className="landing-player-preview__rating">
                   <span className="landing-player-preview__rating-mark" aria-hidden="true">✓</span>
                   <span className="landing-player-preview__rating-copy">
-                    <span>Allenatore verificato</span>
+                    <span>Valutazione d’esempio</span>
                     <strong>Valutazione Tecnica: 8.8 / 10</strong>
                   </span>
                 </div>
@@ -312,10 +312,6 @@ export default function Home() {
               Crea il tuo profilo <span aria-hidden="true">→</span>
             </button>
           </section>
-          <footer className="landing-footer">
-            <span>HiddenGems</span>
-            <span>Una rete più aperta per il calcio.</span>
-          </footer>
         </main>
       ) : (
         <main className="page auth-shell landing-auth">
